@@ -4,6 +4,7 @@ using Gutenberg.Error;
 using Gutenberg.Types;
 using Gutenberg.Statistic;
 using System.Collections.Concurrent;
+using System.Net.Sockets;
 
 namespace Gutenberg
 {
@@ -60,6 +61,7 @@ namespace Gutenberg
         }
         public void Start()
         {
+            type.Start();
             byte anyErros = 0;
             for (int i = 0; i < threads.Length; i++)
             {
@@ -82,6 +84,7 @@ namespace Gutenberg
             {
                 Thread.Sleep(100);
             }
+            type.Close();
             InitThreads();
         }
         public int HasMessage(int bufferIndex)
@@ -154,20 +157,31 @@ namespace Gutenberg
 
                         while (!cancellationTokenSource.IsCancellationRequested)
                         {
-                            threadFunction(ref statisticOfFunction, ref buffers[bufferIndex]);
-                            switch (statisticOfFunction.type)
+                            try
                             {
-                                case StatisticOfFunction.Type.Incoming:
-                                    statistic.IncomingMessage = statisticOfFunction.handelMessage;
-                                    statistic.readData = statisticOfFunction.handelDataLength;
-                                    break;
-                                case StatisticOfFunction.Type.Outcoming:
-                                    statistic.OutcomingMessage = statisticOfFunction.handelMessage;
-                                    statistic.writeData = statisticOfFunction.handelDataLength;
-                                    break;
+                                threadFunction(ref statisticOfFunction, ref buffers[bufferIndex]);
+                                switch (statisticOfFunction.type)
+                                {
+                                    case StatisticOfFunction.Type.Incoming:
+                                        statistic.IncomingMessage = statisticOfFunction.handelMessage;
+                                        statistic.readData = statisticOfFunction.handelDataLength;
+                                        break;
+                                    case StatisticOfFunction.Type.Outcoming:
+                                        statistic.OutcomingMessage = statisticOfFunction.handelMessage;
+                                        statistic.writeData = statisticOfFunction.handelDataLength;
+                                        break;
+                                }
+                                statisticOfFunction.Reset();
+                                Thread.Sleep(100);
                             }
-                            statisticOfFunction.Reset();
-                            Thread.Sleep(100);
+                            catch(SocketException ex)
+                            {
+                                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Error, 0, "SocketException [" + ex.Message + "]", "ThreadInside");
+                            }
+                            catch(Exception ex)
+                            {
+                                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "Unknow Exception [" + ex.Message + "]", "ThreadInside");
+                            }
                         }
                         Interlocked.Decrement(ref statistic.runningThreads);
                     });

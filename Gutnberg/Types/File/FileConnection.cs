@@ -26,6 +26,16 @@ namespace Gutenberg.Types.File
             CheckDirectorys((ConfigurationFile)Configuration);
         }
 
+        /// <summary>
+        /// Not used for FileConnction
+        /// </summary>
+        public void Close() { }
+        /// <summary>
+        /// Not used for FileConnction
+        /// </summary>
+        public void Start() { }
+
+
         private void CheckDirectorys(ConfigurationFile configurationFile)
         {
             if(configurationFile == null)

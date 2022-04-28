@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Types\Database\" />
     <Folder Include="Types\Pipe\" />
-    <Folder Include="Types\Socket\" />
   </ItemGroup>
 
 </Project>
