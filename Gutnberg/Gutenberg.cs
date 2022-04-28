@@ -7,9 +7,15 @@ using System.Collections.Concurrent;
 
 namespace Gutenberg
 {
+    public enum BufferIndex
+    {
+        Send = 0, 
+        Receive = 1
+    }
+
     public class Gutenberg<TConfig, TType>
     {
-        private delegate void delegateVoidWithStatistic(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> );
+        private delegate void delegateVoidWithStatistic(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer);
         private CancellationTokenSource? cancellationTokenSource;
 
         private TConfig? configuration;
@@ -18,8 +24,7 @@ namespace Gutenberg
         public StatisticInterface? statistic;
         public ErrorObject? errorObject;
 
-        private ConcurrentQueue<byte[]> ReadBuffers;
-        private ConcurrentQueue<byte[]> WritteBuffers;
+        private ConcurrentQueue<byte[]>[] buffers;
 
         ~Gutenberg() {
             Terminated();
@@ -33,8 +38,7 @@ namespace Gutenberg
             cancellationTokenSource = new CancellationTokenSource();            
             statistic = new StatisticInterface();
             InitThreads();
-            ReadBuffers = new ConcurrentQueue<byte[]>();
-            WritteBuffers = new ConcurrentQueue<byte[]>();
+            InitBuffers();
             return this;
         }
 
@@ -51,8 +55,8 @@ namespace Gutenberg
                 return;
             }
             type.Init(configuration as IConfiguration);
-            AddThread(type.Read);
-            AddThread(type.Write);
+            AddThread(type.Read, (int)BufferIndex.Receive);
+            AddThread(type.Write, (int)BufferIndex.Send);
         }
         public void Start()
         {
@@ -80,12 +84,44 @@ namespace Gutenberg
             }
             InitThreads();
         }
+        public int HasMessage(int bufferIndex)
+        {
+            return buffers[bufferIndex].Count;
+        }
+        public byte[] Get(int bufferIndex)
+        {
+            if (buffers[bufferIndex].Count == 0)
+            {
+                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Warning, 0, "Try to Recive Empty data from buffer", "Get");
+                return null;
+            }
+
+            byte[]? recMessage;
+            while (!buffers[bufferIndex].TryDequeue(out recMessage))
+            {
+                Thread.Sleep(5);
+            }
+            return recMessage;
+        }
+        public void Put(int bufferIndex, byte [] setMessage)
+        {
+            buffers[bufferIndex].Enqueue(setMessage);
+        }
+
 
         private void InitThreads()
         {
             threads = new Thread[2];
         }
-        private void AddThread(delegateVoidWithStatistic threadFunction, ref ReadBuffers)
+        private void InitBuffers()
+        {
+            buffers = new ConcurrentQueue<byte[]>[2];
+            for(int i = 0; i < buffers.Length; i++)
+            {
+                buffers[i] = new ConcurrentQueue<byte[]>();
+            }
+        }
+        private void AddThread(delegateVoidWithStatistic threadFunction, int bufferIndex)
         {
             if (threadFunction == null)
             {
@@ -95,6 +131,16 @@ namespace Gutenberg
             if (threads == null)
             {
                 errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "threads can not be null", "AddThread");
+                return;
+            }
+            if (statistic == null)
+            {
+                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "statistics can not be null", "AddThread");
+                return;
+            }
+            if (cancellationTokenSource == null)
+            {
+                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "cancellationTokenSource can not be null", "AddThread");
                 return;
             }
 
@@ -108,7 +154,7 @@ namespace Gutenberg
 
                         while (!cancellationTokenSource.IsCancellationRequested)
                         {
-                            threadFunction(ref statisticOfFunction);
+                            threadFunction(ref statisticOfFunction, ref buffers[bufferIndex]);
                             switch (statisticOfFunction.type)
                             {
                                 case StatisticOfFunction.Type.Incoming:

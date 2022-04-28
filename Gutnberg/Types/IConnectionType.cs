@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ namespace Gutenberg.Types
     public interface IConnectionType
     {        
         public void Init(IConfiguration newConfiguration);
-        public void Read(ref StatisticOfFunction statisticOfFunction);
-        public void Write(ref StatisticOfFunction statisticOfFunction);
+        public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer);
+        public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer);
     }
 }
