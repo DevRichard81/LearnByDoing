@@ -23,8 +23,19 @@ if (gutenberg.errorObject != null)
 
 bool finish = false;
 
+
 while(!finish)
 {
     Console.WriteLine(gutenberg.statistic.ToString());
     Thread.Sleep(1000);
+    if(Console.KeyAvailable)
+    {
+        ConsoleKeyInfo result = Console.ReadKey();
+        if (result.Key == ConsoleKey.Escape)
+            finish = true;
+    }
+    Thread.Sleep(500);
 }
+
+gutenberg.Terminated();
+gutenberg = null;

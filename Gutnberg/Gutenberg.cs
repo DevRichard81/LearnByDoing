@@ -3,12 +3,13 @@ using Gutenberg.Statistics;
 using Gutenberg.Error;
 using Gutenberg.Types;
 using Gutenberg.Statistic;
+using System.Collections.Concurrent;
 
 namespace Gutenberg
 {
     public class Gutenberg<TConfig, TType>
     {
-        private delegate void delegateVoidWithStatistic(ref StatisticOfFunction statisticOfFunction);
+        private delegate void delegateVoidWithStatistic(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> );
         private CancellationTokenSource? cancellationTokenSource;
 
         private TConfig? configuration;
@@ -16,6 +17,9 @@ namespace Gutenberg
         private Thread[]? threads;
         public StatisticInterface? statistic;
         public ErrorObject? errorObject;
+
+        private ConcurrentQueue<byte[]> ReadBuffers;
+        private ConcurrentQueue<byte[]> WritteBuffers;
 
         ~Gutenberg() {
             Terminated();
@@ -29,6 +33,8 @@ namespace Gutenberg
             cancellationTokenSource = new CancellationTokenSource();            
             statistic = new StatisticInterface();
             InitThreads();
+            ReadBuffers = new ConcurrentQueue<byte[]>();
+            WritteBuffers = new ConcurrentQueue<byte[]>();
             return this;
         }
 
@@ -79,7 +85,7 @@ namespace Gutenberg
         {
             threads = new Thread[2];
         }
-        private void AddThread(delegateVoidWithStatistic threadFunction)
+        private void AddThread(delegateVoidWithStatistic threadFunction, ref ReadBuffers)
         {
             if (threadFunction == null)
             {

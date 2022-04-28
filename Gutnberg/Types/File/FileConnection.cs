@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 using Gutenberg.Configuration;
@@ -41,6 +42,7 @@ namespace Gutenberg.Types.File
             // Pre Configuration some Configurations
             PickFiles = Path.Combine(configurationFile.baseDirectory, configurationFile.incomeDirectory);
             MoveErrorFiles = Path.Combine(configurationFile.baseDirectory, configurationFile.errorDirectory);
+            Thread.Sleep(100);
         }
 
         public void Read(ref StatisticOfFunction statisticOfFunction)
@@ -49,7 +51,10 @@ namespace Gutenberg.Types.File
             foreach (var itm in Directory.GetFiles(PickFiles))
             {
                 var file = new FileInfo(itm);
-                file.MoveTo(MoveErrorFiles, true);
+                file.Attributes &= ~FileAttributes.Normal;
+                file.MoveTo(MoveErrorFiles +"\\"+ file.Name, true);
+
+                
                 statisticOfFunction.handelMessage++;
                 statisticOfFunction.handelDataLength += (uint)file.Length;
                 // Finish File
