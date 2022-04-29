@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Gutenberg.Configuration;
+using Gutenberg.Statistic;
 
 namespace Gutenberg.Types.NetworkSocket
 {
@@ -59,6 +61,76 @@ namespace Gutenberg.Types.NetworkSocket
             catch(ObjectDisposedException ex) {  }
 
             configuration.socket.Close();
+        }
+
+        public static int Read(ConfigurationSocket configuration, ref StatisticOfFunction statisticOfFunction, Socket [] readFromSockets, out List<byte[]> bufferList)
+        {
+            int countAllBytes = 0;
+            byte[] buffer = new byte[configuration.reciveBufferSize];
+
+            bufferList = new List<byte[]>();
+
+            for(int i = 0; i < readFromSockets.Length; i++)
+            {
+                var readBytes = Read(readFromSockets[i], ref buffer);
+                bufferList.Add(buffer[0..readBytes]);
+                countAllBytes += readBytes;
+            }
+
+            statisticOfFunction.handelDataLength += (uint)countAllBytes;
+            statisticOfFunction.handelMessage += (uint)bufferList.Count;
+            statisticOfFunction.type = StatisticOfFunction.Type.Incoming;
+
+            return countAllBytes;
+        }
+        public static int Read(Socket readFromSocket, ref byte[] buffer)
+        {
+            StatisticOfFunction statisticOfFunction = new StatisticOfFunction();
+            return Read(ref statisticOfFunction, readFromSocket, ref buffer);
+        }
+        public static int Read(ref StatisticOfFunction statisticOfFunction, Socket readFromSocket, ref byte[] buffer)
+        {
+            Array.Clear(buffer);
+            int countBytes = readFromSocket.Receive(buffer);
+            if (statisticOfFunction != null)
+            {
+                statisticOfFunction.handelDataLength += (uint)countBytes;
+                statisticOfFunction.handelMessage += 1;
+                statisticOfFunction.type = StatisticOfFunction.Type.Incoming;
+            }
+            return countBytes;
+        }
+
+        public static int Write(ref StatisticOfFunction statisticOfFunction, Socket[] writeToSocket, byte[] sendBuffer)
+        {
+            int countAllBytes = 0;
+            for (int i = 0; i < writeToSocket.Length; i++)
+            {
+                var x = Write(writeToSocket[i], sendBuffer);
+                if (countAllBytes == 0)
+                    countAllBytes = x;
+            }
+
+            statisticOfFunction.handelDataLength += (uint)countAllBytes;
+            statisticOfFunction.handelMessage += 1;
+            statisticOfFunction.type = StatisticOfFunction.Type.Outcoming;
+            return countAllBytes;
+        }
+        public static int Write(Socket writeToSocket, byte[] sendBuffer)
+        {
+            StatisticOfFunction statisticOfFunction = new StatisticOfFunction();
+            return Write(ref statisticOfFunction, writeToSocket, sendBuffer);
+        }
+        public static int Write(ref StatisticOfFunction statisticOfFunction, Socket writeToSocket, byte[] sendBuffer)
+        {
+            int byteSent = writeToSocket.Send(sendBuffer);
+            if (byteSent > 0)
+            {
+                statisticOfFunction.handelMessage++;
+                statisticOfFunction.handelDataLength = (uint)sendBuffer.Length;
+                statisticOfFunction.type = StatisticOfFunction.Type.Outcoming;
+            }
+            return byteSent;
         }
     }
 }

@@ -42,14 +42,14 @@ namespace LearnByDoingCli
             while (!finish)
             {
                 Console.WriteLine(gutenberg.statistic.ToString());
-                if (gutenberg.HasMessage((int)BufferIndex.Receive) > 0)
+                if (gutenberg.HasMessage() > 0)
                 {
                     Console.WriteLine("Message was recived");
-                    var message = gutenberg.Get((int)BufferIndex.Receive);
+                    var message = gutenberg.Get();
                     Console.WriteLine("Message is:" + Encoding.ASCII.GetString(message));
 
                     var sendMessage = Encoding.ASCII.GetBytes("Thanks for your Message:" + Encoding.ASCII.GetString(message));
-                    gutenberg.Put((int)BufferIndex.Send, sendMessage);
+                    gutenberg.Put(sendMessage);
                 }
 
                 Thread.Sleep(250);

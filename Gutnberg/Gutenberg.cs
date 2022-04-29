@@ -87,28 +87,31 @@ namespace Gutenberg
             type.Close();
             InitThreads();
         }
-        public int HasMessage(int bufferIndex)
+        public int HasMessage()
         {
-            return buffers[bufferIndex].Count;
+            int bufIdx = (int)BufferIndex.Receive;
+            return buffers[bufIdx].Count;
         }
-        public byte[] Get(int bufferIndex)
+        public byte[] Get()
         {
-            if (buffers[bufferIndex].Count == 0)
+            int bufIdx = (int)BufferIndex.Receive;
+            if (buffers[bufIdx].Count == 0)
             {
                 errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Warning, 0, "Try to Recive Empty data from buffer", "Get");
                 return null;
             }
 
             byte[]? recMessage;
-            while (!buffers[bufferIndex].TryDequeue(out recMessage))
+            while (!buffers[bufIdx].TryDequeue(out recMessage))
             {
                 Thread.Sleep(5);
             }
             return recMessage;
         }
-        public void Put(int bufferIndex, byte [] setMessage)
+        public void Put(byte [] setMessage)
         {
-            buffers[bufferIndex].Enqueue(setMessage);
+            int bufIdx = (int)BufferIndex.Send;
+            buffers[bufIdx].Enqueue(setMessage);
         }
 
 
@@ -158,15 +161,17 @@ namespace Gutenberg
                         while (!cancellationTokenSource.IsCancellationRequested)
                         {
                             try
-                            {
+                            {                                
                                 threadFunction(ref statisticOfFunction, ref buffers[bufferIndex]);
                                 switch (statisticOfFunction.type)
                                 {
                                     case StatisticOfFunction.Type.Incoming:
+                                        Console.WriteLine("AddThread[" + bufferIndex + "] IN");
                                         statistic.IncomingMessage = statisticOfFunction.handelMessage;
                                         statistic.readData = statisticOfFunction.handelDataLength;
                                         break;
                                     case StatisticOfFunction.Type.Outcoming:
+                                        Console.WriteLine("AddThread[" + bufferIndex + "] OUT");
                                         statistic.OutcomingMessage = statisticOfFunction.handelMessage;
                                         statistic.writeData = statisticOfFunction.handelDataLength;
                                         break;

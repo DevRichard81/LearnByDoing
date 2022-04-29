@@ -63,21 +63,21 @@ while (!finish)
     if (!sendClientToServer)
     {
         sendClientToServer = true;
-        gutenbergC.Put((int)BufferIndex.Send, Encoding.ASCII.GetBytes("Thanks for your Message from Client."));
+        gutenbergC.Put(Encoding.ASCII.GetBytes("Thanks for your Message from Client."));
         Thread.Sleep(500);
     }
 
-    if (gutenbergS.HasMessage((int)BufferIndex.Receive) > 0)
+    if (gutenbergS.HasMessage() > 0)
     {
-        var message = gutenbergS.Get((int)BufferIndex.Receive);
+        var message = gutenbergS.Get();
         Console.WriteLine("Message was recived by S Message is:" + Encoding.ASCII.GetString(message));
-        gutenbergS.Put((int)BufferIndex.Send, Encoding.ASCII.GetBytes("Recived your message Client. Message:" + Encoding.ASCII.GetString(message)));
+        gutenbergS.Put(Encoding.ASCII.GetBytes("Recived your message Client. Message:" + Encoding.ASCII.GetString(message)));
         Thread.Sleep(100);
     }
 
-    if (gutenbergC.HasMessage((int)BufferIndex.Receive) > 0)
+    if (gutenbergC.HasMessage() > 0)
     {
-        var message = gutenbergC.Get((int)BufferIndex.Receive);
+        var message = gutenbergC.Get();
         Console.WriteLine("Message was recived by C Message is:" + Encoding.ASCII.GetString(message));
         Thread.Sleep(100);
     }

@@ -48,49 +48,26 @@ namespace Gutenberg.Types.NetworkSocket
 
         public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            var config = (ConfigurationSocket)Configuration;
-            for (int i = 0; i < connected.Count; i++)
+            int byteRec = SocketConnectionShare.Read(
+                (ConfigurationSocket)Configuration, 
+                ref statisticOfFunction,
+                connected.ToArray(),
+                out List<byte[]> BufferList);
+
+            if (byteRec > 0)
             {
-                if (connected[i].Connected)
-                {
-                    Array.Clear(receiveBuffer);
-                    int byteRecv = connected[i].Receive(receiveBuffer);
-                    if (byteRecv > 0)
-                    {
-                        buffer.Enqueue(receiveBuffer[0..byteRecv]);
-                        statisticOfFunction.handelDataLength += (uint)byteRecv;
-                        statisticOfFunction.handelMessage++;                        
-                    }
-                }
+                foreach(var item in BufferList)
+                    buffer.Enqueue(item);
             }
-            statisticOfFunction.type = StatisticOfFunction.Type.Incoming;
-            Console.WriteLine("D" + buffer.Count)
             Thread.Sleep(1);
         }
 
         public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            var config = (ConfigurationSocket)Configuration;
             byte[]? sendBuffer;
-            int byteSend = 0;
             if (buffer.TryDequeue(out sendBuffer))
             {
-                for(int i = 0; i < connected.Count; i++)
-                {
-                    if (connected[i].Connected)
-                    {
-                         int x = config.socket.Send(sendBuffer);
-                        if(byteSend == 0)
-                            byteSend = x;
-                    }
-                }
-
-                if (byteSend > 0)
-                {
-                    statisticOfFunction.handelMessage++;
-                    statisticOfFunction.handelDataLength = (uint)byteSend;
-                    statisticOfFunction.type = StatisticOfFunction.Type.Outcoming;
-                }
+                SocketConnectionShare.Write(ref statisticOfFunction, connected.ToArray(), sendBuffer);
             }
         }
     }

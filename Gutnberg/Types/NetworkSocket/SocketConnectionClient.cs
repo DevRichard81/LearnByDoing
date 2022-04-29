@@ -40,15 +40,12 @@ namespace Gutenberg.Types.NetworkSocket
         public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
             var config = (ConfigurationSocket)Configuration;
-            Array.Clear(receiveBuffer);
-            int byteRecv = config.socket.Receive(receiveBuffer);
+            int byteRecv = SocketConnectionShare.Read(ref statisticOfFunction, config.socket, ref receiveBuffer);
             if(byteRecv > 0)
             {
-                buffer.Enqueue(receiveBuffer);
-                statisticOfFunction.handelDataLength += (uint)byteRecv;
-                statisticOfFunction.handelMessage++;
-                statisticOfFunction.type = StatisticOfFunction.Type.Incoming;
+                buffer.Enqueue(receiveBuffer[0..byteRecv]);
             }
+            Thread.Sleep(1);
         }
 
         public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
@@ -57,13 +54,7 @@ namespace Gutenberg.Types.NetworkSocket
             byte[]? sendBuffer;
             if (buffer.TryDequeue(out sendBuffer))
             {
-                int byteSent = config.socket.Send(sendBuffer);
-                if (byteSent > 0)
-                {
-                    statisticOfFunction.handelMessage++;
-                    statisticOfFunction.handelDataLength = (uint)sendBuffer.Length;
-                    statisticOfFunction.type = StatisticOfFunction.Type.Outcoming;
-                }
+                SocketConnectionShare.Write(ref statisticOfFunction, config.socket, sendBuffer);
             }    
         }
     }
