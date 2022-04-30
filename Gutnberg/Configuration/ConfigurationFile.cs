@@ -8,14 +8,14 @@ namespace Gutenberg.Configuration
 {
     public class ConfigurationFile : IConfiguration
     {
-        public string baseDirectory;
-        public string incomeDirectory;
-        public string outcomeDirectory;
-        public string errorDirectory;
-
-        public string sendFilePrefix;
-        public string sendFileDateFormat;
-        public string sendFileSuffix;
-        public string sendFileExtension;
+        public string baseDirectory    = String.Empty;
+        public string incomeDirectory  = String.Empty;
+        public string outcomeDirectory = String.Empty;
+        public string errorDirectory   = String.Empty;
+                                       
+        public string sendFilePrefix     = String.Empty;
+        public string sendFileDateFormat = String.Empty;
+        public string sendFileSuffix     = String.Empty;
+        public string sendFileExtension  = String.Empty;
     }
 }

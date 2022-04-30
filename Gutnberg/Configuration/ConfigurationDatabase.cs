@@ -8,8 +8,8 @@ namespace Gutenberg.Configuration
 {
     public class ConfigurationDatabase : IConfiguration
     {
-        public string userName;
-        public string userPwd;
-        public string connectionString;
+        public string userName         = String.Empty;
+        public string userPwd          = String.Empty;
+        public string connectionString = String.Empty;
     }
 }
