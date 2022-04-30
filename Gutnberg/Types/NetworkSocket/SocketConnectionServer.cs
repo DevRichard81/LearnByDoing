@@ -13,7 +13,7 @@ namespace Gutenberg.Types.NetworkSocket
 {
     public class SocketConnectionServer : IConnectionType
     {
-        private IConfiguration? Configuration { get; set; }
+        private ConfigurationSocket? Configuration { get; set; }
         private byte[] receiveBuffer;
         private Thread listener;
         private List<Socket> connected;
@@ -23,20 +23,18 @@ namespace Gutenberg.Types.NetworkSocket
         public void Init(IConfiguration newConfiguration)
         {
             Configuration = newConfiguration as ConfigurationSocket;
-            SocketConnectionShare.CreateSocket((ConfigurationSocket)Configuration);
-            SocketConnectionShare.Listenner((ConfigurationSocket)Configuration);
+            SocketConnectionShare.CreateSocket(Configuration);
+            SocketConnectionShare.Listenner(Configuration);
             //
-            var config = (ConfigurationSocket)Configuration;
-            receiveBuffer = new byte[config.reciveBufferSize];
+            receiveBuffer = new byte[Configuration.reciveBufferSize];
             connected = new List<Socket>();
         }
 
         public void Start()
         {
-            var config = (ConfigurationSocket)Configuration;
             listener = new Thread(() =>
             {
-                Socket clientSocket = config.socket.Accept();
+                Socket clientSocket = Configuration.socket.Accept();
                 connected.Add(clientSocket);
             });
             listener.Start();
@@ -44,13 +42,13 @@ namespace Gutenberg.Types.NetworkSocket
 
         public void Close()
         {
-            SocketConnectionShare.Disconnect((ConfigurationSocket)Configuration);
+            SocketConnectionShare.Disconnect(Configuration);
         }
 
         public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
             int byteRec = SocketConnectionShare.Read(
-                (ConfigurationSocket)Configuration, 
+                Configuration, 
                 ref statisticOfFunction,
                 connected.ToArray(),
                 out List<byte[]> BufferList);

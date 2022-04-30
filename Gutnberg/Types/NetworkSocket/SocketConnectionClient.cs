@@ -13,7 +13,7 @@ namespace Gutenberg.Types.NetworkSocket
 {
     public class SocketConnectionClient : IConnectionType
     {
-        private IConfiguration? Configuration { get; set; }
+        private ConfigurationSocket? Configuration { get; set; }
         private byte[] receiveBuffer;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
@@ -22,15 +22,14 @@ namespace Gutenberg.Types.NetworkSocket
         public void Init(IConfiguration newConfiguration)
         {
             Configuration = newConfiguration as ConfigurationSocket;            
-            SocketConnectionShare.CreateSocket((ConfigurationSocket)Configuration);
-            SocketConnectionShare.Connect((ConfigurationSocket)Configuration);
+            SocketConnectionShare.CreateSocket(Configuration);
+            SocketConnectionShare.Connect(Configuration);
             //
-            var config = (ConfigurationSocket)Configuration;
-            receiveBuffer = new byte[config.reciveBufferSize];
+            receiveBuffer = new byte[Configuration.reciveBufferSize];
         }
         public void Close()
         {
-            SocketConnectionShare.Disconnect((ConfigurationSocket)Configuration);
+            SocketConnectionShare.Disconnect(Configuration);
         }
 
         /// <summary>
@@ -51,13 +50,12 @@ namespace Gutenberg.Types.NetworkSocket
 
         public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            var config = (ConfigurationSocket)Configuration;
             if (config.socket.Connected)
             {
                 byte[]? sendBuffer;
                 if (buffer.TryDequeue(out sendBuffer))
                 {
-                    SocketConnectionShare.Write(ref statisticOfFunction, config.socket, sendBuffer);
+                    SocketConnectionShare.Write(ref statisticOfFunction, Configuration.socket, sendBuffer);
                 }
             }
             else

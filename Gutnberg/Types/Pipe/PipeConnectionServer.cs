@@ -16,7 +16,7 @@ namespace Gutenberg.Types.Pipe
 {
     public class PipeConnectionServer : IConnectionType
     {
-        private IConfiguration? Configuration { get; set; }        
+        private ConfigurationPipes? Configuration { get; set; }        
         private List<PipeStateObject> connections;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
@@ -29,15 +29,14 @@ namespace Gutenberg.Types.Pipe
 
         public void Start()
         {
-            var config = Configuration as ConfigurationPipes;
-            for (int idx=0; idx < config.numThreads; idx++)
+            for (int idx=0; idx < Configuration.numThreads; idx++)
             {
                 PipeStateObject pipeStateObject = new PipeStateObject();
                 pipeStateObject.namePipeServerStream = new NamedPipeServerStream(
-                    config.pipeName, 
-                    config.pipeDirection,
-                    config.numThreads,
-                    config.pipeTransmissionMode,
+                    Configuration.pipeName,
+                    Configuration.pipeDirection,
+                    Configuration.numThreads,
+                    Configuration.pipeTransmissionMode,
                     PipeOptions.Asynchronous);                
                 pipeStateObject.BeginConnect();                
                 connections.Add(pipeStateObject);
@@ -62,15 +61,14 @@ namespace Gutenberg.Types.Pipe
 
         public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            var config = Configuration as ConfigurationPipes;
-            byte[] reciveBuffer = new byte[config.reciveBufferSize];
+            byte[] reciveBuffer = new byte[Configuration.reciveBufferSize];
             
             foreach (var itm in connections)
             {
                 if (itm.namePipeServerStream.IsConnected)
                 {
                     Array.Clear(reciveBuffer);
-                    int byteRecv = itm.namePipeServerStream.Read(reciveBuffer, 0, config.reciveBufferSize);
+                    int byteRecv = itm.namePipeServerStream.Read(reciveBuffer, 0, Configuration.reciveBufferSize);
                     if (byteRecv > 0)
                     {
                         buffer.Enqueue(reciveBuffer);

@@ -14,7 +14,7 @@ namespace Gutenberg.Types.File
 {
     public class FileConnection : IConnectionType
     {
-        private IConfiguration? Configuration { get; set; }
+        private ConfigurationFile? Configuration { get; set; }
         private string PickFiles;
         private string SendFiles;
         private string MoveErrorFiles;
@@ -24,7 +24,7 @@ namespace Gutenberg.Types.File
         public void Init(IConfiguration newConfiguration)
         {
             Configuration = newConfiguration as ConfigurationFile;
-            CheckDirectorys((ConfigurationFile)Configuration);
+            CheckDirectorys(Configuration);
         }
 
         /// <summary>
@@ -61,7 +61,6 @@ namespace Gutenberg.Types.File
 
         public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            var config = (ConfigurationFile)Configuration;
             foreach (var itm in Directory.GetFiles(PickFiles))
             {
                 var file = new FileInfo(itm);
@@ -87,13 +86,12 @@ namespace Gutenberg.Types.File
 
         public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            var config = (ConfigurationFile)Configuration;
             byte[]? sendBuffer;
             if (buffer.TryDequeue(out sendBuffer))
             {
                 System.IO.File.WriteAllBytes(SendFiles + "\\" 
-                    + config.sendFileSuffix + DateTime.Now.ToString(config.sendFileDateFormat) + config.sendFilePrefix
-                    + "." + config.sendFileExtension, sendBuffer);
+                    + Configuration.sendFileSuffix + DateTime.Now.ToString(Configuration.sendFileDateFormat) + Configuration.sendFilePrefix
+                    + "." + Configuration.sendFileExtension, sendBuffer);
                 statisticOfFunction.handelMessage++;
                 statisticOfFunction.handelDataLength = (uint)sendBuffer.Length;
                 statisticOfFunction.type = StatisticOfFunction.Type.Outcoming;

@@ -8,7 +8,7 @@ namespace Gutenberg.Types.Pipe
 {
     public class PipeConnectionClient : IConnectionType
     {
-        private IConfiguration? Configuration { get; set; }
+        private ConfigurationPipes? Configuration { get; set; }
         private NamedPipeClientStream connection;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
@@ -20,11 +20,10 @@ namespace Gutenberg.Types.Pipe
 
         public void Start()
         {
-            var config = Configuration as ConfigurationPipes;
             connection = new NamedPipeClientStream(
-                        config.ServerName, 
-                        config.pipeName,
-                        config.pipeDirection,
+                        Configuration.ServerName,
+                        Configuration.pipeName,
+                        Configuration.pipeDirection,
                         PipeOptions.Asynchronous);            
             connection.Connect();
             connection.ReadMode = PipeTransmissionMode.Byte;
@@ -40,15 +39,14 @@ namespace Gutenberg.Types.Pipe
 
         public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            var config = Configuration as ConfigurationPipes;
-            byte[] reciveBuffer = new byte[config.reciveBufferSize];
+            byte[] reciveBuffer = new byte[Configuration.reciveBufferSize];
 
             if(connection.IsConnected && connection.CanRead)
             {
                 try
                 {
                     Array.Clear(reciveBuffer);
-                    int byteRecv = connection.Read(reciveBuffer, 0, config.reciveBufferSize);
+                    int byteRecv = connection.Read(reciveBuffer, 0, Configuration.reciveBufferSize);
                     if (byteRecv > 0)
                     {
                         buffer.Enqueue(reciveBuffer);
