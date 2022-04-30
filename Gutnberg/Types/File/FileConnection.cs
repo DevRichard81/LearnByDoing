@@ -18,7 +18,8 @@ namespace Gutenberg.Types.File
         private string PickFiles;
         private string SendFiles;
         private string MoveErrorFiles;
-        public ErrorObject? ErrorObject { get; private set; }
+        private ErrorObject? _errorObject;
+        public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
         public void Init(IConfiguration newConfiguration)
         {

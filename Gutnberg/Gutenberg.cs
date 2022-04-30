@@ -114,6 +114,47 @@ namespace Gutenberg
             buffers[bufIdx].Enqueue(setMessage);
         }
 
+        public void HasError()
+        {
+            if (errorObject != null)
+            {
+                Console.WriteLine("Error in " + nameof(Gutenberg));
+                Console.WriteLine(errorObject.ToString());
+            }
+
+            if (type.ErrorObject != null)
+            {
+                Console.WriteLine("Error in ConnectionType" + type.GetType().Name);
+                Console.WriteLine(type.ErrorObject.ToString());
+            }
+        }
+        public void Status()
+        {
+            Console.WriteLine("Threads:");
+            if (threads == null)
+            {
+                Console.WriteLine("Threads not init");
+            }
+            else 
+            {
+                for (int i = 0; i < threads.Length; i++)
+                {
+                    Console.WriteLine("ID " + i + " Status " + threads[i].IsAlive + threads[i].ThreadState.ToString());
+                } 
+            }
+            Console.WriteLine("Buffers:");
+            if (buffers == null || buffers.Length == 0)
+            {
+                Console.WriteLine("Buffers not init");
+            }
+            else
+            {
+                for (int i = 0; i < buffers.Length; i++)
+                {
+                    Console.WriteLine("ID " + i + " Count " + buffers[i].Count);
+                }
+            }
+        }
 
         private void InitThreads()
         {
@@ -150,52 +191,49 @@ namespace Gutenberg
                 return;
             }
 
-            for (int i = 0; i < threads.Length; i++)
+            if (threads[bufferIndex] == null)
             {
-                if(threads[i] == null)
+                threads[bufferIndex] = new Thread(() =>
                 {
-                    threads[i] = new Thread(() => 
+                    StatisticOfFunction statisticOfFunction = new StatisticOfFunction();
+
+                    while (!cancellationTokenSource.IsCancellationRequested)
                     {
-                        StatisticOfFunction statisticOfFunction = new StatisticOfFunction() { type = StatisticOfFunction.Type.Incoming};
-
-                        while (!cancellationTokenSource.IsCancellationRequested)
+                        try
                         {
-                            try
-                            {                                
-                                threadFunction(ref statisticOfFunction, ref buffers[bufferIndex]);
-                                switch (statisticOfFunction.type)
-                                {
-                                    case StatisticOfFunction.Type.Incoming:
-                                        Console.WriteLine("AddThread[" + bufferIndex + "] IN");
-                                        statistic.IncomingMessage = statisticOfFunction.handelMessage;
-                                        statistic.readData = statisticOfFunction.handelDataLength;
-                                        break;
-                                    case StatisticOfFunction.Type.Outcoming:
-                                        Console.WriteLine("AddThread[" + bufferIndex + "] OUT");
-                                        statistic.OutcomingMessage = statisticOfFunction.handelMessage;
-                                        statistic.writeData = statisticOfFunction.handelDataLength;
-                                        break;
-                                }
-                                statisticOfFunction.Reset();
-                                Thread.Sleep(100);
-                            }
-                            catch(SocketException ex)
+                            threadFunction(ref statisticOfFunction, ref buffers[bufferIndex]);
+                            switch (statisticOfFunction.type)
                             {
-                                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Error, 0, "SocketException [" + ex.Message + "]", "ThreadInside");
+                                case StatisticOfFunction.Type.Incoming:
+                                    Console.WriteLine("AddThread[" + bufferIndex + "] IN");
+                                    statistic.IncomingMessage = statisticOfFunction.handelMessage;
+                                    statistic.readData = statisticOfFunction.handelDataLength;
+                                    break;
+                                case StatisticOfFunction.Type.Outcoming:
+                                    Console.WriteLine("AddThread[" + bufferIndex + "] OUT");
+                                    statistic.OutcomingMessage = statisticOfFunction.handelMessage;
+                                    statistic.writeData = statisticOfFunction.handelDataLength;
+                                    break;
+                                default:
+                                    Console.WriteLine("StatisticOfFunction was unknow");
+                                    break;
                             }
-                            catch(Exception ex)
-                            {
-                                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "Unknow Exception [" + ex.Message + "]", "ThreadInside");
-                            }
+                            statisticOfFunction.Reset();
+                            Thread.Sleep(100);
                         }
-                        Interlocked.Decrement(ref statistic.runningThreads);
-                    });
-                    Interlocked.Increment(ref statistic.runningThreads);
-                    break;
-                }
+                        catch (SocketException ex)
+                        {
+                            errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Error, 0, "SocketException [" + ex.Message + "]", "ThreadInside");
+                        }
+                        catch (Exception ex)
+                        {
+                            errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "Unknow Exception [" + ex.Message + "]", "ThreadInside");
+                        }
+                    }
+                    Interlocked.Decrement(ref statistic.runningThreads);
+                });
+                Interlocked.Increment(ref statistic.runningThreads);
             }
-
         }
-
     }
 }

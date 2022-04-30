@@ -17,7 +17,8 @@ namespace Gutenberg.Types.NetworkSocket
         private byte[] receiveBuffer;
         private Thread listener;
         private List<Socket> connected;
-        public ErrorObject? ErrorObject { get; private set; }
+        private ErrorObject? _errorObject;
+        public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
         public void Init(IConfiguration newConfiguration)
         {

@@ -8,7 +8,7 @@ namespace Gutenberg.Statistic
 {
     public record StatisticOfFunction
     {
-        public enum Type { Incoming, Outcoming}
+        public enum Type { Incoming, Outcoming, None}
         /// <summary>
         /// 1 = incoming, 2 = outcoming
         /// </summary>
@@ -18,6 +18,7 @@ namespace Gutenberg.Statistic
 
         public void Reset()
         {
+            type = Type.None;
             handelDataLength = 0;
             handelMessage = 0;
         }

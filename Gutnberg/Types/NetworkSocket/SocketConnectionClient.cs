@@ -15,7 +15,8 @@ namespace Gutenberg.Types.NetworkSocket
     {
         private IConfiguration? Configuration { get; set; }
         private byte[] receiveBuffer;
-        public ErrorObject? ErrorObject { get; private set; }
+        private ErrorObject? _errorObject;
+        public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
 
         public void Init(IConfiguration newConfiguration)
@@ -51,11 +52,19 @@ namespace Gutenberg.Types.NetworkSocket
         public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
             var config = (ConfigurationSocket)Configuration;
-            byte[]? sendBuffer;
-            if (buffer.TryDequeue(out sendBuffer))
+            if (config.socket.Connected)
             {
-                SocketConnectionShare.Write(ref statisticOfFunction, config.socket, sendBuffer);
-            }    
+                byte[]? sendBuffer;
+                if (buffer.TryDequeue(out sendBuffer))
+                {
+                    SocketConnectionShare.Write(ref statisticOfFunction, config.socket, sendBuffer);
+                }
+            }
+            else
+            {
+                ErrorObject = new ErrorObject().Set(ErrorObject.ErrorType.Error, 0, "Try to send message but connection was closed", "Write");
+                Thread.Sleep(100);
+            }
         }
     }
 }

@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Types\Database\" />
-    <Folder Include="Types\Pipe\" />
   </ItemGroup>
 
 </Project>

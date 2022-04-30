@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
+using Gutenberg;
 using Gutenberg.Configuration;
 using Gutenberg.Types.File;
-using Gutenberg;
 
 namespace LearnByDoingCli
 {
