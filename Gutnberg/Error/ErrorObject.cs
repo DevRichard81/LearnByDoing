@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
-namespace Gutenberg.Error
+namespace Project_Gutenberg.Error
 {
     public class ErrorObject
     {
@@ -28,9 +24,13 @@ namespace Gutenberg.Error
         public ErrorObject Set(ErrorObject errorObject)
         {
             if (this.internErrorObject != null)
-                return null;
-
-            this.internErrorObject = errorObject;
+            {
+                this.internErrorObject.Set(errorObject);
+            }
+            else
+            {
+                this.internErrorObject = errorObject;
+            }          
             return this;
         }
         public ErrorObject Set(ErrorType errorType, int errorNumber)

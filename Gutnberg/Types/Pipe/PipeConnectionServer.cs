@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Collections.Concurrent;
 using System.IO.Pipes;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using Gutenberg.Configuration;
-using Gutenberg.Error;
-using Gutenberg.Statistic;
-using Gutenberg.Types.NetworkSocket;
+using Project_Gutenberg.Configuration;
+using Project_Gutenberg.Error;
+using Project_Gutenberg.Statistic;
 
-namespace Gutenberg.Types.Pipe
+namespace Project_Gutenberg.Types.Pipe
 {
     public class PipeConnectionServer : IConnectionType
     {

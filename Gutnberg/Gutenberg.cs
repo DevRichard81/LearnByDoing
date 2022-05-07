@@ -1,12 +1,12 @@
-﻿using Gutenberg.Configuration;
-using Gutenberg.Statistics;
-using Gutenberg.Error;
-using Gutenberg.Types;
-using Gutenberg.Statistic;
+﻿using Project_Gutenberg.Configuration;
+using Project_Gutenberg.Statistics;
+using Project_Gutenberg.Error;
+using Project_Gutenberg.Types;
+using Project_Gutenberg.Statistic;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 
-namespace Gutenberg
+namespace Project_Gutenberg
 {
     public enum BufferIndex
     {
@@ -14,12 +14,12 @@ namespace Gutenberg
         Receive = 1
     }
 
-    public class Gutenberg<TConfig, TType>
+    public class Gutenberg
     {
         private delegate void delegateVoidWithStatistic(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer);
         private CancellationTokenSource? cancellationTokenSource;
 
-        private TConfig? configuration;
+        private IConfiguration? configuration;
         private IConnectionType? type;
         private Thread[]? threads;
         public StatisticInterface? statistic;
@@ -32,7 +32,7 @@ namespace Gutenberg
             Thread.Sleep(100);            
         }
 
-        public Gutenberg<TConfig, TType> Configuration(TConfig newConfiguration, TType newType)
+        public Gutenberg Configuration(IConfiguration newConfiguration, IConnectionType newType)
         {
             configuration = newConfiguration;
             type = newType as IConnectionType;

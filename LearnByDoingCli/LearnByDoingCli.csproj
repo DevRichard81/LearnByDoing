@@ -1,14 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageProjectUrl>https://github.com/DevRichard81/LearnByDoing</PackageProjectUrl>
+    <Copyright>https://github.com/DevRichard81</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Alexander\Alexander.csproj" />
     <ProjectReference Include="..\Gutnberg\Gutenberg.csproj" />
+    <ProjectReference Include="..\Mendel\Mendel.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,20 +1,14 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using Gutenberg.Configuration;
-using Gutenberg.Error;
-using Gutenberg.Statistic;
+using Project_Gutenberg.Configuration;
+using Project_Gutenberg.Error;
+using Project_Gutenberg.Statistic;
 
-namespace Gutenberg.Types.NetworkSocket
+namespace Project_Gutenberg.Types.NetworkSocket
 {
     public class SocketConnectionServer : IConnectionType
     {
         private ConfigurationSocket? Configuration { get; set; }
-        private byte[] receiveBuffer;
         private Thread listener;
         private List<Socket> connected;
         private ErrorObject? _errorObject;
@@ -26,7 +20,6 @@ namespace Gutenberg.Types.NetworkSocket
             SocketConnectionShare.CreateSocket(Configuration);
             SocketConnectionShare.Listenner(Configuration);
             //
-            receiveBuffer = new byte[Configuration.reciveBufferSize];
             connected = new List<Socket>();
         }
 

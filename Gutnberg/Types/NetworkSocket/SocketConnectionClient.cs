@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Gutenberg.Configuration;
-using Gutenberg.Error;
-using Gutenberg.Statistic;
+﻿using System.Collections.Concurrent;
+using Project_Gutenberg.Configuration;
+using Project_Gutenberg.Error;
+using Project_Gutenberg.Statistic;
 
-namespace Gutenberg.Types.NetworkSocket
+namespace Project_Gutenberg.Types.NetworkSocket
 {
     public class SocketConnectionClient : IConnectionType
     {
@@ -50,7 +44,7 @@ namespace Gutenberg.Types.NetworkSocket
 
         public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
         {
-            if (config.socket.Connected)
+            if (Configuration.socket.Connected)
             {
                 byte[]? sendBuffer;
                 if (buffer.TryDequeue(out sendBuffer))

@@ -1,10 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.IO.Pipes;
-using Gutenberg.Configuration;
-using Gutenberg.Error;
-using Gutenberg.Statistic;
+using Project_Gutenberg.Configuration;
+using Project_Gutenberg.Error;
+using Project_Gutenberg.Statistic;
 
-namespace Gutenberg.Types.Pipe
+namespace Project_Gutenberg.Types.Pipe
 {
     public class PipeConnectionClient : IConnectionType
     {
@@ -21,7 +21,7 @@ namespace Gutenberg.Types.Pipe
         public void Start()
         {
             connection = new NamedPipeClientStream(
-                        Configuration.ServerName,
+                        Configuration.serverName,
                         Configuration.pipeName,
                         Configuration.pipeDirection,
                         PipeOptions.Asynchronous);            

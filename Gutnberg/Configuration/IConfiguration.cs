@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gutenberg.Configuration
+namespace Project_Gutenberg.Configuration
 {
     public interface IConfiguration
     {

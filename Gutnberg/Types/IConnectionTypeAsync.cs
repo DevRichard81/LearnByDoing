@@ -10,7 +10,7 @@ using Project_Gutenberg.Statistic;
 
 namespace Project_Gutenberg.Types
 {
-    public interface IConnectionType
+    public interface IConnectionTypeAsync
     {
         public ErrorObject? ErrorObject { get; set; }
 
@@ -18,7 +18,10 @@ namespace Project_Gutenberg.Types
         public void Start();
         public void Close();
 
-        public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer);
-        public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer);
+        public void ReadWrite(
+            ref StatisticOfFunction statisticOfFunctionSend,
+            ref StatisticOfFunction statisticOfFunctionReceive,
+            ref ConcurrentQueue<byte[]> bufferSend,
+            ref ConcurrentQueue<byte[]> bufferReceive);
     }
 }

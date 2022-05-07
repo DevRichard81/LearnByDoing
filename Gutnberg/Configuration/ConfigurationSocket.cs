@@ -6,9 +6,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Gutenberg.Configuration
+namespace Project_Gutenberg.Configuration
 {
-    public class ConfigurationSocket : IConfiguration
+    public record ConfigurationSocket : IConfiguration
     {        
         public ProtocolType protocolType = ProtocolType.Unknown;
         public int retrayConnection      = 10;
@@ -19,10 +19,17 @@ namespace Gutenberg.Configuration
         public IPEndPoint? ipEndPoint;
         public Socket? socket;
 
-        public void SetEndPoint(string adress, int port)
+        public ConfigurationSocket SetEndPoint(string adress, int port)
         {
             IPAddress[] ipaddress = Dns.GetHostAddresses(adress);
             ipEndPoint = new IPEndPoint(ipaddress.First(), port);
+
+            return this;
+        }
+        public ConfigurationSocket SetProtocolType(ProtocolType protocolType)
+        {
+            this.protocolType = protocolType;
+            return this;
         }
     }
 }

@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Gutenberg.Configuration;
-using Gutenberg.Statistic;
+﻿using System.Net.Sockets;
+using Project_Gutenberg.Configuration;
+using Project_Gutenberg.Statistic;
 
-namespace Gutenberg.Types.NetworkSocket
+namespace Project_Gutenberg.Types.NetworkSocket
 {
     internal static class SocketConnectionShare
     {

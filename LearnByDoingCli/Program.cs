@@ -1,20 +1,13 @@
-﻿using Gutenberg.Configuration;
-using Gutenberg.Types.File;
-using Gutenberg;
-using System.Text;
-using LearnByDoingCli;
-using System.Net.Sockets;
-using Gutenberg.Types.NetworkSocket;
+﻿using LearnByDoingCli;
 
-Console.WriteLine("---------------------------");
-Console.WriteLine("Welcome to Larning by Doing");
-Console.WriteLine("---------------------------");
+Console.WriteLine("----------------------------");
+Console.WriteLine("Welcome to Learning by Doing");
+Console.WriteLine("----------------------------");
 
 //
-ISamples mySample;
-//SampleFile   mySampleFile;
-//SampleSocket mySampleSocket;
-//SamplePipe   mySamplePipe;
+//ISamples mySample = new SampleMendel();
+//ISamples mySample = mySampleFile;
 //
-mySample = new SamplePipe();
+ISamples mySample = new SamplePipe();
+//ISamples mySample = new SampleSocket();
 mySample.Run();

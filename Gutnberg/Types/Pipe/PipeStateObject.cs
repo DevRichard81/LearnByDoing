@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO.Pipes;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO.Pipes;
 
-namespace Gutenberg.Types.Pipe
+namespace Project_Gutenberg.Types.Pipe
 {
     internal class PipeStateObject
     {

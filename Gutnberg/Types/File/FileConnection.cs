@@ -1,23 +1,16 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.AccessControl;
-using System.Text;
-using System.Threading.Tasks;
-using Gutenberg.Configuration;
-using Gutenberg.Error;
-using Gutenberg.Statistic;
+﻿using System.Collections.Concurrent;
+using Project_Gutenberg.Configuration;
+using Project_Gutenberg.Error;
+using Project_Gutenberg.Statistic;
 
-namespace Gutenberg.Types.File
+namespace Project_Gutenberg.Types.File
 {
     public class FileConnection : IConnectionType
     {
         private ConfigurationFile? Configuration { get; set; }
         private string PickFiles;
         private string SendFiles;
-        private string MoveErrorFiles;
+        private string MoveReadedFiles;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
@@ -50,12 +43,12 @@ namespace Gutenberg.Types.File
                 Directory.CreateDirectory(configurationFile.baseDirectory);
                 Directory.CreateDirectory(Path.Combine(configurationFile.baseDirectory, configurationFile.incomeDirectory));
                 Directory.CreateDirectory(Path.Combine(configurationFile.baseDirectory, configurationFile.outcomeDirectory));
-                Directory.CreateDirectory(Path.Combine(configurationFile.baseDirectory, configurationFile.errorDirectory));
+                Directory.CreateDirectory(Path.Combine(configurationFile.baseDirectory, configurationFile.readedDirectory));
             }
             // Pre Configuration some Configurations
             PickFiles = Path.Combine(configurationFile.baseDirectory, configurationFile.incomeDirectory);
             SendFiles = Path.Combine(configurationFile.baseDirectory, configurationFile.outcomeDirectory);
-            MoveErrorFiles = Path.Combine(configurationFile.baseDirectory, configurationFile.errorDirectory);
+            MoveReadedFiles = Path.Combine(configurationFile.baseDirectory, configurationFile.readedDirectory);
             Thread.Sleep(100);
         }
 
@@ -65,7 +58,7 @@ namespace Gutenberg.Types.File
             {
                 var file = new FileInfo(itm);
                 file.Attributes &= ~FileAttributes.Normal;
-                file.MoveTo(MoveErrorFiles +"\\"+ file.Name, true);
+                file.MoveTo(MoveReadedFiles +"\\"+ file.Name, true);
 
                 using (var x = file.OpenRead())
                 {
@@ -90,7 +83,9 @@ namespace Gutenberg.Types.File
             if (buffer.TryDequeue(out sendBuffer))
             {
                 System.IO.File.WriteAllBytes(SendFiles + "\\" 
-                    + Configuration.sendFileSuffix + DateTime.Now.ToString(Configuration.sendFileDateFormat) + Configuration.sendFilePrefix
+                    + Configuration.sendFileSuffix 
+                    + DateTime.Now.ToString(Configuration.sendFileDateFormat) 
+                    + Configuration.sendFilePrefix
                     + "." + Configuration.sendFileExtension, sendBuffer);
                 statisticOfFunction.handelMessage++;
                 statisticOfFunction.handelDataLength = (uint)sendBuffer.Length;

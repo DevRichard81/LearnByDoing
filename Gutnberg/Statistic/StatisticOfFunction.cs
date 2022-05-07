@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Gutenberg.Statistic
+﻿namespace Project_Gutenberg.Statistic
 {
     public record StatisticOfFunction
     {
         public enum Type { Incoming, Outcoming, None}
         /// <summary>
-        /// 1 = incoming, 2 = outcoming
+        /// 0 = incoming, 1 = outcoming
         /// </summary>
-        public Type type = 0;
+        public Type type = Type.None;
         public uint handelDataLength = 0;
         public uint handelMessage = 0;
 
