@@ -2,6 +2,7 @@
 using System.IO.Pipes;
 using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
+using Project_Gutenberg.GutenbergShared;
 using Project_Gutenberg.Statistic;
 
 namespace Project_Gutenberg.Types.Pipe
@@ -23,13 +24,15 @@ namespace Project_Gutenberg.Types.Pipe
         {
             for (int idx=0; idx < Configuration.numThreads; idx++)
             {
-                PipeStateObject pipeStateObject = new PipeStateObject();
-                pipeStateObject.namePipeServerStream = new NamedPipeServerStream(
+                PipeStateObject pipeStateObject = new()
+                {
+                    namePipeServerStream = new NamedPipeServerStream(
                     Configuration.pipeName,
                     Configuration.pipeDirection,
                     Configuration.numThreads,
                     Configuration.pipeTransmissionMode,
-                    PipeOptions.Asynchronous);                
+                    PipeOptions.Asynchronous)
+                };
                 pipeStateObject.BeginConnect();                
                 connections.Add(pipeStateObject);
             }
@@ -51,7 +54,7 @@ namespace Project_Gutenberg.Types.Pipe
             connections.Clear();
         }
 
-        public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Read(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             byte[] reciveBuffer = new byte[Configuration.reciveBufferSize];
             
@@ -63,7 +66,7 @@ namespace Project_Gutenberg.Types.Pipe
                     int byteRecv = itm.namePipeServerStream.Read(reciveBuffer, 0, Configuration.reciveBufferSize);
                     if (byteRecv > 0)
                     {
-                        buffer.Enqueue(reciveBuffer);
+                        buffer.AddReceivedMessage(reciveBuffer);
                         statisticOfFunction.handelDataLength += (uint)byteRecv;
                         statisticOfFunction.handelMessage += 1;
                     }
@@ -73,11 +76,11 @@ namespace Project_Gutenberg.Types.Pipe
             Thread.Sleep(1);
         }
 
-        public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Write(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             byte[]? sendBuffer;
             bool wasSendOnce = false;
-            if (buffer.TryDequeue(out sendBuffer))
+            if (buffer.BufferSend.TryDequeue(out sendBuffer))
             {
                 foreach (var itm in connections)
                 {

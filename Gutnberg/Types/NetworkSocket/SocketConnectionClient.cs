@@ -1,7 +1,10 @@
 ﻿using System.Collections.Concurrent;
+using System.Threading;
+using Project_Gutenberg.GutenbergShared;
 using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
 using Project_Gutenberg.Statistic;
+using System.Net.Sockets;
 
 namespace Project_Gutenberg.Types.NetworkSocket
 {
@@ -12,7 +15,6 @@ namespace Project_Gutenberg.Types.NetworkSocket
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
-
         public void Init(IConfiguration newConfiguration)
         {
             Configuration = newConfiguration as ConfigurationSocket;            
@@ -20,7 +22,8 @@ namespace Project_Gutenberg.Types.NetworkSocket
             SocketConnectionShare.Connect(Configuration);
             //
             receiveBuffer = new byte[Configuration.reciveBufferSize];
-        }
+        } 
+
         public void Close()
         {
             SocketConnectionShare.Disconnect(Configuration);
@@ -31,23 +34,23 @@ namespace Project_Gutenberg.Types.NetworkSocket
         /// </summary>
         public void Start() { }
 
-        public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Read(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             var config = (ConfigurationSocket)Configuration;
             int byteRecv = SocketConnectionShare.Read(ref statisticOfFunction, config.socket, ref receiveBuffer);
             if(byteRecv > 0)
             {
-                buffer.Enqueue(receiveBuffer[0..byteRecv]);
+                buffer.AddReceivedMessage(receiveBuffer[0..byteRecv]);
             }
             Thread.Sleep(1);
         }
 
-        public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Write(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             if (Configuration.socket.Connected)
             {
                 byte[]? sendBuffer;
-                if (buffer.TryDequeue(out sendBuffer))
+                if (buffer.BufferSend.TryDequeue(out sendBuffer))
                 {
                     SocketConnectionShare.Write(ref statisticOfFunction, Configuration.socket, sendBuffer);
                 }

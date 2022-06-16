@@ -69,7 +69,7 @@ namespace Project_Gutenberg.Statistics
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.Append(runningThreads);
             sb.Append(" ReadData:");
             sb.Append(_readData);

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
+using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
 using Project_Gutenberg.Statistic;
 
@@ -15,5 +16,11 @@ namespace Project_Gutenberg.Types.NetworkSocketAsync
 
         public Socket socket { get; set; }
         public ErrorObject? ErrorObject { get; set; }
+
+        public ConfigurationSocket? Configuration { get; set; }
+
+        internal ManualResetEvent connectDone = new(false);
+        internal ManualResetEventSlim sendActive = new(false);
+        internal ManualResetEventSlim receiveActive = new(false);
     }
 }

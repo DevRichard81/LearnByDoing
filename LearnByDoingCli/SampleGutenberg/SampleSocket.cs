@@ -10,8 +10,8 @@ namespace LearnByDoingCli
     {        
         //
         private bool sendClientToServer;
-        private string pongBy;
-        private byte[] handledMessage;
+        private string PongBy { get; set; }
+        private byte[]? handledMessage;
 
         public SampleSocket()
         {
@@ -19,18 +19,20 @@ namespace LearnByDoingCli
                 .SetEndPoint("127.0.0.1", 1001)
                 .SetProtocolType(ProtocolType.Tcp);
 
-            Gutenbergs = new Dictionary<string, Gutenberg>();
-            Gutenbergs.Add("Server", new Gutenberg().Configuration(config, new SocketConnectionServer()));
-            Gutenbergs.Add("Client", new Gutenberg().Configuration(config, new SocketConnectionClient()));
+            Gutenbergs = new Dictionary<string, IGutenberg>
+            {
+                { "Server", new Gutenberg().Configuration(config, new SocketConnectionServer()) },
+                { "Client", new Gutenberg().Configuration(config, new SocketConnectionClient()) }
+            };
 
-            pongBy = "Server";
+            PongBy = "Server";
         }
 
         public void Run()
         {
-            if(Gutenbergs.Count != 2)
+            if (Gutenbergs?.Count != 2)
             {
-                Console.WriteLine("Server or Client was not exsiting, count only" + Gutenbergs.Count);
+                Console.WriteLine("Server or Client was not exsiting, count only" + Gutenbergs?.Count);
                 return;
             }
             Console.WriteLine("---------------------");
@@ -62,7 +64,7 @@ namespace LearnByDoingCli
                     if (handledMessage != null)
                     {
                         Console.WriteLine("Server Received Message:" + Encoding.ASCII.GetString(handledMessage));
-                        if(itm.Key == pongBy)
+                        if(itm.Key == PongBy)
                             itm.Value.Put(Encoding.ASCII.GetBytes("Recived your message. Message:" + Encoding.ASCII.GetString(handledMessage)));
                     }
                 }

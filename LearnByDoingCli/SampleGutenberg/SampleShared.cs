@@ -11,12 +11,14 @@ namespace LearnByDoingCli
     public class SampleShared
     {
         internal bool finish;
-        internal IConfiguration config;
-        internal Dictionary<string, Gutenberg> Gutenbergs { get; init; }
+        internal IConfiguration? config;
+        public Dictionary<string, IGutenberg>? Gutenbergs { get; init; }
 
         public virtual void Init()
         {
             Console.WriteLine("Start Init Prozess");
+            if (Gutenbergs == null)
+                return;
 
             foreach (var itm in Gutenbergs)
             {
@@ -33,7 +35,9 @@ namespace LearnByDoingCli
         }
         public virtual void ReportStatistics()
         {
-            string Prefix = String.Empty;
+            string Prefix;
+            if (Gutenbergs == null)
+                return;
             foreach (var itm in Gutenbergs)
             {
                 Prefix = "[" + itm.Key + "]";
@@ -51,9 +55,9 @@ namespace LearnByDoingCli
                     finish = true;
             }
         }
-        protected static byte[]? ReceiveMessageIf(Gutenberg gutenberg)
+        protected static byte[]? ReceiveMessageIf(IGutenberg gutenberg)
         {
-            if (gutenberg.HasMessage() > 0)
+            if (gutenberg.HasMessage())
             {
                 return gutenberg.Get();
             }

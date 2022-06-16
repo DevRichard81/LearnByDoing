@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
@@ -14,56 +15,69 @@ using Project_Gutenberg.Types.NetworkSocket;
 namespace Project_Gutenberg.Types.NetworkSocketAsync
 {
     public class SocketConnectionClientAsync : IConnectionTypeAsync
-    {
-        private ConfigurationSocket? Configuration { get; set; }
+    {        
         private SocketConnectionAsyncObject AsyncObject;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
         public void Close()
         {
-            throw new NotImplementedException();
+            AsyncObject.Configuration?.socket?.Shutdown(SocketShutdown.Both);
+            AsyncObject.Configuration?.socket?.Close();
+            AsyncObject.connectDone.Reset();
         }
-
         public void Init(IConfiguration newConfiguration)
         {
-            Configuration = newConfiguration as ConfigurationSocket;
-            SocketConnectionShareAsync.CreateSocket(Configuration, ref AsyncObject);
-            SocketConnectionShare.Connect(Configuration);       
+            AsyncObject = new SocketConnectionAsyncObject();
+            AsyncObject.Configuration = newConfiguration as ConfigurationSocket;
+            SocketConnectionShareAsync.CreateSocket(ref AsyncObject);      
+        }
+        public void Start()
+        {
+            AsyncObject.Configuration.socket.BeginConnect(
+                AsyncObject.Configuration.ipEndPoint,
+                new AsyncCallback(SocketConnectionShareAsync.ConnectCallback),
+                AsyncObject);
         }
 
         public void ReadWrite(
             ref StatisticOfFunction statisticOfFunctionSend,
             ref StatisticOfFunction statisticOfFunctionReceive,
-            ref ConcurrentQueue<byte[]> bufferSend,
-            ref ConcurrentQueue<byte[]> bufferReceive)
+            ConcurrentQueue<byte[]> bufferSend,
+            ConcurrentQueue<byte[]> bufferReceive)
         {
+            AsyncObject.connectDone.WaitOne(); // WaitFor a connection
+
             AsyncObject.StatisticReceive = statisticOfFunctionReceive;
             AsyncObject.StatisticSend = statisticOfFunctionSend;
             AsyncObject.BufferReceive = bufferReceive;
             AsyncObject.BufferSend = bufferSend;
-            AsyncObject.BufferReceiveBuffer = new byte[Configuration.reciveBufferSize];
+            AsyncObject.BufferReceiveBuffer = new byte[AsyncObject.Configuration.reciveBufferSize];
 
-            AsyncObject.socket.BeginReceive(
-                AsyncObject.BufferReceiveBuffer, 0, Configuration.reciveBufferSize,
-                SocketFlags.None,
-                new AsyncCallback(SocketConnectionShareAsync.ReceiveCallback),
-                AsyncObject);
-
-            byte[]? sendBuffer;
-            if (bufferSend.TryDequeue(out sendBuffer))
+            if (!AsyncObject.receiveActive.IsSet)
             {
-                AsyncObject.socket.BeginSend(
-                    sendBuffer, 0, sendBuffer.Length,
+                AsyncObject.receiveActive.Set();
+                AsyncObject.socket.BeginReceive(
+                    AsyncObject.BufferReceiveBuffer, 0, AsyncObject.Configuration.reciveBufferSize,
                     SocketFlags.None,
-                    new AsyncCallback(SocketConnectionShareAsync.SendCallback),
+                    new AsyncCallback(SocketConnectionShareAsync.ReceiveCallback),
                     AsyncObject);
-            }            
-        }
+            }
 
-        public void Start()
-        {
-            throw new NotImplementedException();
+            if (!AsyncObject.sendActive.IsSet)
+            {
+                AsyncObject.sendActive.Set();
+
+                byte[]? sendBuffer;
+                if (bufferSend.TryDequeue(out sendBuffer))
+                {
+                    AsyncObject.socket.BeginSend(
+                        sendBuffer, 0, sendBuffer.Length,
+                        SocketFlags.None,
+                        new AsyncCallback(SocketConnectionShareAsync.SendCallback),
+                        AsyncObject);
+                }
+            }
         }
     }
 }

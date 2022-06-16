@@ -8,8 +8,8 @@ namespace LearnByDoingCli
 {
     internal class SampleFile : SampleShared, ISamples
     {
-        byte[] handledMessage;
-        string pongBy;
+        byte[]? handledMessage;
+        string PongBy { get; set; }
 
         public SampleFile()
         {
@@ -17,10 +17,12 @@ namespace LearnByDoingCli
                 .SetDirectorys(@"D:\Gutenberg\", "incoming", "outcoming", "error")
                 .SetSendFile("suffix", "yyyyMMddHHmmssfffffff", "prefix", "txt");
 
-            Gutenbergs = new Dictionary<string, Gutenberg>();
-            Gutenbergs.Add("Server", new Gutenberg().Configuration(config, new FileConnection()));
+            Gutenbergs = new Dictionary<string, IGutenberg>
+            {
+                { "Server", new Gutenberg().Configuration(config, new FileConnection()) }
+            };
 
-            pongBy = "Server";
+            PongBy = "Server";
         }
 
         public void Run()
@@ -30,6 +32,8 @@ namespace LearnByDoingCli
             Console.WriteLine("-------------------");
 
             Init();
+            if (Gutenbergs == null)
+                return;
 
             while (!finish)
             {
@@ -42,7 +46,7 @@ namespace LearnByDoingCli
                     if (handledMessage != null)
                     {
                         Console.WriteLine("Server Received Message:" + Encoding.ASCII.GetString(handledMessage));
-                        if (itm.Key == pongBy)
+                        if (itm.Key == PongBy)
                             itm.Value.Put(Encoding.ASCII.GetBytes("Recived your message. Message:" + Encoding.ASCII.GetString(handledMessage)));
                     }
                 }

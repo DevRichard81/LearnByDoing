@@ -5,45 +5,44 @@ using Project_Gutenberg.Types;
 using Project_Gutenberg.Statistic;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.Text;
+using Project_Gutenberg.GutenbergShared;
 
 namespace Project_Gutenberg
 {
-    public enum BufferIndex
+    public class Gutenberg : IGutenberg
     {
-        Send = 0, 
-        Receive = 1
-    }
-
-    public class Gutenberg
-    {
-        private delegate void delegateVoidWithStatistic(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer);
-        private CancellationTokenSource? cancellationTokenSource;
-
-        private IConfiguration? configuration;
+        protected IGutenbergBuffers GutenbergBuffers { get; set; }
+        protected GutenbergThreads GutenbergThreads;
+        protected IConfiguration? configuration;
         private IConnectionType? type;
-        private Thread[]? threads;
-        public StatisticInterface? statistic;
-        public ErrorObject? errorObject;
+        public StatisticInterface? statistic { get; set; }
+        public ErrorObject? errorObject { get; set; }
 
-        private ConcurrentQueue<byte[]>[] buffers;
+        public Gutenberg()
+        {
+            statistic = new StatisticInterface();
+            GutenbergBuffers = new GutenbergBuffers();
+            GutenbergThreads = new GutenbergThreads();
+        }
 
         ~Gutenberg() {
             Terminated();
-            Thread.Sleep(100);            
+            Thread.Sleep(100);
+        }
+        public void Configuration(IConfiguration newConfiguration)
+        {
+            configuration = newConfiguration;
         }
 
         public Gutenberg Configuration(IConfiguration newConfiguration, IConnectionType newType)
         {
-            configuration = newConfiguration;
+            Configuration(newConfiguration);
             type = newType as IConnectionType;
-            cancellationTokenSource = new CancellationTokenSource();            
-            statistic = new StatisticInterface();
-            InitThreads();
-            InitBuffers();
             return this;
         }
 
-        public void Init()
+        public virtual void Init()
         {
             if (configuration == null)
             {
@@ -52,69 +51,22 @@ namespace Project_Gutenberg
             }
             if (type == null)
             {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "Typen can not be null", "Init");
+                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, nameof(type) + " can not be null", "Init");
                 return;
             }
             type.Init(configuration as IConfiguration);
-            AddThread(type.Read, (int)BufferIndex.Receive);
-            AddThread(type.Write, (int)BufferIndex.Send);
+            AddThread(type.Read);
+            AddThread(type.Write);
         }
-        public void Start()
-        {
+        public virtual void Start()
+        { 
             type.Start();
-            byte anyErros = 0;
-            for (int i = 0; i < threads.Length; i++)
-            {
-                if (threads[i] == null)
-                    anyErros++;
-                else
-                {
-                    threads[i].Start();
-                }
-            }
-            if (anyErros != 0)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Error, 0, "By starting of Threads there was unexpected [" + anyErros + "] failurs", "Start");
-            }
+            GutenbergThreads.Start();
         }
-        public void Terminated()
-        {
-            cancellationTokenSource.Cancel();
-            while (statistic.runningThreads != 0)
-            {
-                Thread.Sleep(100);
-            }
-            type.Close();
-            InitThreads();
-        }
-        public int HasMessage()
-        {
-            int bufIdx = (int)BufferIndex.Receive;
-            return buffers[bufIdx].Count;
-        }
-        public byte[] Get()
-        {
-            int bufIdx = (int)BufferIndex.Receive;
-            if (buffers[bufIdx].Count == 0)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Warning, 0, "Try to Recive Empty data from buffer", "Get");
-                return null;
-            }
+        public virtual void Terminated() => type?.Close();
+        public bool HasMessage() => GutenbergBuffers.HasMessage();
 
-            byte[]? recMessage;
-            while (!buffers[bufIdx].TryDequeue(out recMessage))
-            {
-                Thread.Sleep(5);
-            }
-            return recMessage;
-        }
-        public void Put(byte [] setMessage)
-        {
-            int bufIdx = (int)BufferIndex.Send;
-            buffers[bufIdx].Enqueue(setMessage);
-        }
-
-        public void HasError()
+        public virtual void HasError()
         {
             if (errorObject != null)
             {
@@ -131,53 +83,21 @@ namespace Project_Gutenberg
         public void Status()
         {
             Console.WriteLine("Threads:");
-            if (threads == null)
-            {
-                Console.WriteLine("Threads not init");
-            }
-            else 
-            {
-                for (int i = 0; i < threads.Length; i++)
-                {
-                    Console.WriteLine("ID " + i + " Status " + threads[i].IsAlive + threads[i].ThreadState.ToString());
-                } 
-            }
+            Console.WriteLine(GutenbergThreads.ToString());
             Console.WriteLine("Buffers:");
-            if (buffers == null || buffers.Length == 0)
-            {
-                Console.WriteLine("Buffers not init");
-            }
-            else
-            {
-                for (int i = 0; i < buffers.Length; i++)
-                {
-                    Console.WriteLine("ID " + i + " Count " + buffers[i].Count);
-                }
-            }
+            Console.WriteLine(GutenbergBuffers.ToString());
         }
 
-        private void InitThreads()
-        {
-            threads = new Thread[2];
-        }
-        private void InitBuffers()
-        {
-            buffers = new ConcurrentQueue<byte[]>[2];
-            for(int i = 0; i < buffers.Length; i++)
-            {
-                buffers[i] = new ConcurrentQueue<byte[]>();
-            }
-        }
-        private void AddThread(delegateVoidWithStatistic threadFunction, int bufferIndex)
+        internal void AddThread(GutenbergThreads.delegateVoidWithStatistic threadFunction)
         {
             if (threadFunction == null)
             {
                 errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "threadFunction can not be null", "AddThread");
                 return;
             }
-            if (threads == null)
+            if (GutenbergThreads == null)
             {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "threads can not be null", "AddThread");
+                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads can not be null", "AddThread");
                 return;
             }
             if (statistic == null)
@@ -185,39 +105,24 @@ namespace Project_Gutenberg
                 errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "statistics can not be null", "AddThread");
                 return;
             }
-            if (cancellationTokenSource == null)
+            if (GutenbergThreads.cancellationTokenSource == null)
             {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "cancellationTokenSource can not be null", "AddThread");
+                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads.cancellationTokenSource can not be null", "AddThread");
                 return;
             }
 
-            if (threads[bufferIndex] == null)
-            {
-                threads[bufferIndex] = new Thread(() =>
+            GutenbergThreads.Addthread(new ThreadStart(
+                () =>
                 {
-                    StatisticOfFunction statisticOfFunction = new StatisticOfFunction();
+                    StatisticOfFunction statisticOfFunction = new();
 
-                    while (!cancellationTokenSource.IsCancellationRequested)
+                    while (!GutenbergThreads.cancellationTokenSource.IsCancellationRequested)
                     {
                         try
                         {
-                            threadFunction(ref statisticOfFunction, ref buffers[bufferIndex]);
-                            switch (statisticOfFunction.type)
-                            {
-                                case StatisticOfFunction.Type.Incoming:
-                                    Console.WriteLine("AddThread[" + bufferIndex + "] IN");
-                                    statistic.IncomingMessage = statisticOfFunction.handelMessage;
-                                    statistic.readData = statisticOfFunction.handelDataLength;
-                                    break;
-                                case StatisticOfFunction.Type.Outcoming:
-                                    Console.WriteLine("AddThread[" + bufferIndex + "] OUT");
-                                    statistic.OutcomingMessage = statisticOfFunction.handelMessage;
-                                    statistic.writeData = statisticOfFunction.handelDataLength;
-                                    break;
-                                default:
-                                    Console.WriteLine("StatisticOfFunction was unknow");
-                                    break;
-                            }
+                            threadFunction(ref statisticOfFunction, GutenbergBuffers);
+                            statistic.IncomingMessage = statisticOfFunction.handelMessage;
+                            statistic.readData = statisticOfFunction.handelDataLength;
                             statisticOfFunction.Reset();
                             Thread.Sleep(100);
                         }
@@ -231,9 +136,19 @@ namespace Project_Gutenberg
                         }
                     }
                     Interlocked.Decrement(ref statistic.runningThreads);
-                });
-                Interlocked.Increment(ref statistic.runningThreads);
-            }
+                })
+            );
+            Interlocked.Increment(ref statistic.runningThreads);
+        }    
+
+        public virtual void Put(byte[] setMessage)
+        {
+            GutenbergBuffers.AddSendMessage(setMessage);
+        }
+
+        public virtual byte[] Get()
+        {
+            return GutenbergBuffers.GetReceivedMessage();
         }
     }
 }

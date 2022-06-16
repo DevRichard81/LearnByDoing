@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
+using Project_Gutenberg.GutenbergShared;
 using Project_Gutenberg.Statistic;
 
 namespace Project_Gutenberg.Types.File
@@ -29,7 +30,6 @@ namespace Project_Gutenberg.Types.File
         /// </summary>
         public void Start() { }
 
-
         private void CheckDirectorys(ConfigurationFile configurationFile)
         {
             if(configurationFile == null)
@@ -52,7 +52,7 @@ namespace Project_Gutenberg.Types.File
             Thread.Sleep(100);
         }
 
-        public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Read(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             foreach (var itm in Directory.GetFiles(PickFiles))
             {
@@ -66,7 +66,7 @@ namespace Project_Gutenberg.Types.File
                     {
                         byte[] bytes = new byte[x.Length];
                         x.Read(bytes, 0, bytes.Length);
-                        buffer.Enqueue(bytes);
+                        buffer.AddReceivedMessage(bytes);
                         statisticOfFunction.handelDataLength += (uint)file.Length;
                     }
                 }
@@ -77,10 +77,10 @@ namespace Project_Gutenberg.Types.File
             }
         }
 
-        public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Write(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             byte[]? sendBuffer;
-            if (buffer.TryDequeue(out sendBuffer))
+            if (buffer.BufferSend.TryDequeue(out sendBuffer))
             {
                 System.IO.File.WriteAllBytes(SendFiles + "\\" 
                     + Configuration.sendFileSuffix 

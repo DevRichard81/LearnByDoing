@@ -60,7 +60,7 @@ namespace Project_Gutenberg.Error
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.Append(timeStamp.ToString("yyyy/MM/dd HH:mm:ss fff"));
             sb.Append(' ');
             sb.Append(errorType.ToString());

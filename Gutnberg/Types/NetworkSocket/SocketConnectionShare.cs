@@ -9,7 +9,8 @@ namespace Project_Gutenberg.Types.NetworkSocket
         public static void CreateSocket(ConfigurationSocket configuration)
         {
             Console.WriteLine("CreateSocket");
-            configuration.socket = new Socket(configuration.ipEndPoint.AddressFamily, SocketType.Stream, configuration.protocolType);
+            if(configuration.ipEndPoint!= null)
+                configuration.socket = new Socket(configuration.ipEndPoint.AddressFamily, SocketType.Stream, configuration.protocolType);
         }
 
         public static void Connect(ConfigurationSocket configuration)
@@ -19,7 +20,8 @@ namespace Project_Gutenberg.Types.NetworkSocket
             {
                 try
                 {
-                    configuration.socket.Connect(configuration.ipEndPoint);
+                    if(configuration.ipEndPoint != null)    
+                        configuration.socket.Connect(configuration.ipEndPoint);
                 }
                 catch(SocketException ex)
                 {
@@ -39,8 +41,11 @@ namespace Project_Gutenberg.Types.NetworkSocket
         public static void Listenner(ConfigurationSocket configuration)
         {
             Console.WriteLine("Listenner");
-            configuration.socket.Bind(configuration.ipEndPoint);
-            configuration.socket.Listen(configuration.backlog);            
+            if (configuration.ipEndPoint != null)
+            {
+                configuration.socket.Bind(configuration.ipEndPoint);
+                configuration.socket.Listen(configuration.backlog);
+            }
         }
 
         public static void Disconnect(ConfigurationSocket configuration)
@@ -77,7 +82,7 @@ namespace Project_Gutenberg.Types.NetworkSocket
         }
         public static int Read(Socket readFromSocket, ref byte[] buffer)
         {
-            StatisticOfFunction statisticOfFunction = new StatisticOfFunction();
+            StatisticOfFunction statisticOfFunction = new();
             return Read(ref statisticOfFunction, readFromSocket, ref buffer);
         }
         public static int Read(ref StatisticOfFunction statisticOfFunction, Socket readFromSocket, ref byte[] buffer)
@@ -110,7 +115,7 @@ namespace Project_Gutenberg.Types.NetworkSocket
         }
         public static int Write(Socket writeToSocket, byte[] sendBuffer)
         {
-            StatisticOfFunction statisticOfFunction = new StatisticOfFunction();
+            StatisticOfFunction statisticOfFunction = new();
             return Write(ref statisticOfFunction, writeToSocket, sendBuffer);
         }
         public static int Write(ref StatisticOfFunction statisticOfFunction, Socket writeToSocket, byte[] sendBuffer)

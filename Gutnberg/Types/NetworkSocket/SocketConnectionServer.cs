@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
+using Project_Gutenberg.GutenbergShared;
 using Project_Gutenberg.Statistic;
 
 namespace Project_Gutenberg.Types.NetworkSocket
@@ -17,10 +18,9 @@ namespace Project_Gutenberg.Types.NetworkSocket
         public void Init(IConfiguration newConfiguration)
         {
             Configuration = newConfiguration as ConfigurationSocket;
-            SocketConnectionShare.CreateSocket(Configuration);
-            SocketConnectionShare.Listenner(Configuration);
-            //
             connected = new List<Socket>();
+            SocketConnectionShare.CreateSocket(Configuration);
+            SocketConnectionShare.Listenner(Configuration);            
         }
 
         public void Start()
@@ -38,7 +38,7 @@ namespace Project_Gutenberg.Types.NetworkSocket
             SocketConnectionShare.Disconnect(Configuration);
         }
 
-        public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Read(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             int byteRec = SocketConnectionShare.Read(
                 Configuration, 
@@ -49,15 +49,15 @@ namespace Project_Gutenberg.Types.NetworkSocket
             if (byteRec > 0)
             {
                 foreach(var item in BufferList)
-                    buffer.Enqueue(item);
+                    buffer.AddReceivedMessage(item);
             }
             Thread.Sleep(1);
         }
 
-        public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Write(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             byte[]? sendBuffer;
-            if (buffer.TryDequeue(out sendBuffer))
+            if (buffer.BufferSend.TryDequeue(out sendBuffer))
             {
                 SocketConnectionShare.Write(ref statisticOfFunction, connected.ToArray(), sendBuffer);
             }

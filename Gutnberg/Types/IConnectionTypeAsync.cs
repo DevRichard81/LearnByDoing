@@ -21,7 +21,7 @@ namespace Project_Gutenberg.Types
         public void ReadWrite(
             ref StatisticOfFunction statisticOfFunctionSend,
             ref StatisticOfFunction statisticOfFunctionReceive,
-            ref ConcurrentQueue<byte[]> bufferSend,
-            ref ConcurrentQueue<byte[]> bufferReceive);
+            ConcurrentQueue<byte[]> bufferSend,
+            ConcurrentQueue<byte[]> bufferReceive);
     }
 }

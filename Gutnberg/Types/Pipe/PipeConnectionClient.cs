@@ -2,6 +2,7 @@
 using System.IO.Pipes;
 using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
+using Project_Gutenberg.GutenbergShared;
 using Project_Gutenberg.Statistic;
 
 namespace Project_Gutenberg.Types.Pipe
@@ -37,7 +38,7 @@ namespace Project_Gutenberg.Types.Pipe
             connection = null;
         }
 
-        public void Read(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Read(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             byte[] reciveBuffer = new byte[Configuration.reciveBufferSize];
 
@@ -49,7 +50,7 @@ namespace Project_Gutenberg.Types.Pipe
                     int byteRecv = connection.Read(reciveBuffer, 0, Configuration.reciveBufferSize);
                     if (byteRecv > 0)
                     {
-                        buffer.Enqueue(reciveBuffer);
+                        buffer.AddReceivedMessage(reciveBuffer);
                         statisticOfFunction.handelDataLength += (uint)byteRecv;
                         statisticOfFunction.handelMessage += 1;
                     }
@@ -72,25 +73,24 @@ namespace Project_Gutenberg.Types.Pipe
             statisticOfFunction.type = StatisticOfFunction.Type.Incoming;            
         }
 
-        public void Write(ref StatisticOfFunction statisticOfFunction, ref ConcurrentQueue<byte[]> buffer)
+        public void Write(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             if (connection.IsConnected)
             {
-                byte[]? sendBuffer;
-                if (buffer.TryDequeue(out sendBuffer))
+                if (buffer.BufferSend.TryDequeue(out byte[]? sendBuffer))
                 {
                     try
                     {
                         connection.Write(sendBuffer, 0, sendBuffer.Length);
                         connection.WaitForPipeDrain();
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
                     }
                     statisticOfFunction.handelDataLength += (uint)sendBuffer.Length;
                     statisticOfFunction.handelMessage += 1;
-                }                
+                }
                 Thread.Sleep(1);
             }
             else
