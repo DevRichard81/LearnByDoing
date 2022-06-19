@@ -4,20 +4,20 @@ namespace Mendel
 {
     public class GenomeHandler
     {
-		private static Random _random = new Random();
+		private static readonly Random _random = new();
 		private static int _geneSize;
 		private static bool AllowMutateSwitch = false;
 		private static bool AllowMutateInsert = false;
 		private static bool AllowMutateDelete = false;
-		private int _populationSize;
-		private int _crossOverChance;
+		private int PopulationSize { get; set; }
+		private int CrossOverChance { get; set; }
 		private int _mutationChance;
 		private int _mutationChanceIndel;
 		private int _mutationChancePoint;
 
 		public IList<Genome> Population { get; set; }
 
-		public void CrossOver(Random random = null)
+		public void CrossOver(Random random)
 		{
 			EnsurePopulationIsCreated();
 
@@ -25,7 +25,7 @@ namespace Mendel
 				random = _random;
 
 			// Figure out if crossover should occur for this generation, based on a roll of a random number
-			decimal percentage = _crossOverChance;
+			decimal percentage = CrossOverChance;
 			int randomNumber = random.Next(1, 100);
 
 			if (percentage > 0 && randomNumber <= percentage)
@@ -68,7 +68,7 @@ namespace Mendel
         {
             return genome.Total;
         }
-		public Genome GetChampion()
+		public Genome? GetChampion()
 		{
 			for (int i = 0; i < Population.Count; i++)
 			{
@@ -81,9 +81,9 @@ namespace Mendel
 		{
 			Population = new List<Genome>();
 
-			for (int i = 0; i < _populationSize; i++)
+			for (int i = 0; i < PopulationSize; i++)
 			{
-				Genome genome = new Genome(_geneSize);
+				Genome genome = new(_geneSize);
 				genome.RandomizeGeneValues();
 
 				Population.Add(genome);
@@ -136,7 +136,7 @@ namespace Mendel
 			}			
 		}
 
-		public void Mutate(Random random = null)
+		public void Mutate(Random random)
 		{
 			EnsurePopulationIsCreated();
 
@@ -170,17 +170,17 @@ namespace Mendel
 		{
 			EnsurePopulationIsCreated();
 
-			List<Genome> nextGeneration = new List<Genome>();
+			List<Genome> nextGeneration = new();
 
 			for (int i = 0; i < Population.Count; i++)
 			{
-				Genome genome = SpinBiasedRouletteWheel();
+				Genome genome = SpinBiasedRouletteWheel(_random);
 				nextGeneration.Add(genome);
 			}
 
 			Population = nextGeneration;
 		}
-		public Genome SpinBiasedRouletteWheel(Random random = null)
+		public Genome SpinBiasedRouletteWheel(Random random)
 		{
 			EnsurePopulationIsCreated();
 
@@ -237,8 +237,8 @@ namespace Mendel
 		public GenomeHandler(int geneSize, int populationSize, int crossOverChance)
 		{
 			_geneSize = geneSize;
-			_populationSize = populationSize;
-			_crossOverChance = crossOverChance;
+			PopulationSize = populationSize;
+			CrossOverChance = crossOverChance;
 			
 			Population = new List<Genome>();
 			InitializePopulation();

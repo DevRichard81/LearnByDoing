@@ -8,7 +8,7 @@ namespace Mendel
 {
     internal static class GenomeShare
     {
-        public static Random Random = new Random((int)DateTime.Now.Ticks);
+        public static Random Random = new((int)DateTime.Now.Ticks);
         public static bool ShowDebugMessages { get; set; }
 
         public static bool Percentage(decimal ChanceAsPercentage)

@@ -23,11 +23,11 @@ namespace LearnByDoingCli
 
 			// Act
 			int generation = 0;
-			Genome champion = null;
+			Genome? champion = null;
 			while (champion == null)
 			{
-				world.Mutate();
-				world.CrossOver();
+				world.Mutate(new Random());
+				world.CrossOver(new Random());
 				world.NextGeneration();
 				Console.WriteLine(world);
 

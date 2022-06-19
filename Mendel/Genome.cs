@@ -8,7 +8,7 @@ namespace Mendel
 {
     public class Genome
     {
-        private static Random _random = new Random();
+        private static readonly Random _random = new();
 
         private bool[] _genes;
         public IEnumerable<bool> Genes
@@ -31,7 +31,7 @@ namespace Mendel
 
         public Genome Clone()
         {
-            Genome clonedGenome = new Genome(_genes.Length);
+            Genome clonedGenome = new(_genes.Length);
             List<bool> genes = Genes.ToList();
             for (int i = 0; i < _genes.Length; i++)
             {
@@ -40,10 +40,9 @@ namespace Mendel
 
             return clonedGenome;
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            Genome genome = obj as Genome;
-            if (genome == null)
+            if (obj is not Genome genome)
                 return false;
 
             return genome.Id == Id;
@@ -56,11 +55,11 @@ namespace Mendel
         public static Genome FromString(string bitString)
         {
             if (string.IsNullOrEmpty(bitString))
-                throw new ArgumentNullException("bitString", "bitString parameter is empty");
+                throw new ArgumentNullException(nameof(bitString), "bitString parameter is empty");
 
             bitString = bitString.Replace(" ", "");
 
-            Genome genome = new Genome(bitString.Length);
+            Genome genome = new(bitString.Length);
             for (int i = 0; i < bitString.Length; i++)
             {
                 if (bitString[i] != '0')
@@ -74,13 +73,13 @@ namespace Mendel
             _genes = new bool[maxGenes];
             Id = Guid.NewGuid();
         }
-        private int GetTotal()
-        {
-            string bitstring = "".PadLeft(32 - _genes.Length, '0');
-            bitstring += string.Join("", _genes.Select(g => g == true ? "1" : "0"));
+        //private int GetTotal()
+        //{
+        //    string bitstring = "".PadLeft(32 - _genes.Length, '0');
+        //    bitstring += string.Join("", _genes.Select(g => g == true ? "1" : "0"));
 
-            return Convert.ToInt32(bitstring);
-        }
+        //    return Convert.ToInt32(bitstring);
+        //}
         public void RandomizeGeneValues()
         {
             for (int i = 0; i < _genes.Length; i++)
@@ -88,7 +87,7 @@ namespace Mendel
                 _genes[i] = RandomizeGeneValue();
             }
         }
-        public bool RandomizeGeneValue()
+        public static bool RandomizeGeneValue()
         {
             // The gene is "1" when the rng is over 50
             if (_random.Next(1, 100) > 50)
@@ -165,10 +164,10 @@ namespace Mendel
         }
         public override string ToString()
         {
-            string currentGene = "";
-            string allGenes = "";
-            string currentTotal = "";
-            List<int> genomeTotal = new List<int>();
+            string currentGene;
+            string allGenes = String.Empty;
+            string currentTotal = String.Empty;
+            List<int> genomeTotal = new();
 
             // Splits the genome into blocks of 3 bits
             for (int i = 0; i < _genes.Length; i++)

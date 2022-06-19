@@ -5,9 +5,13 @@ Console.WriteLine("Welcome to Learning by Doing");
 Console.WriteLine("----------------------------");
 
 //
+// Mendel
 //ISamples mySample = new SampleMendel();
-//ISamples mySample = mySampleFile;
 //
-ISamples mySample = new SamplePipe();
-//ISamples mySample = new SampleSocket();
+// Gutenberg
+//ISamples mySample = mySampleFile;
+//ISamples mySample = new SamplePipe();
+ISamples mySample = new SampleSocket();
+//ISamples mySample = new SampleSocketAsync();
+//
 mySample.Run();
