@@ -14,9 +14,11 @@ namespace Project_Gutenberg.Types.Pipe
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
-        public void Init(IConfiguration newConfiguration)
+        public void Init(IConfiguration newConfiguration, IGutenberg gutenberg)
         {
             Configuration = newConfiguration as ConfigurationPipes;
+            gutenberg.gutenbergThreads.AddThread(Read, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
+            gutenberg.gutenbergThreads.AddThread(Write, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
         }
 
         public void Start()
@@ -36,6 +38,17 @@ namespace Project_Gutenberg.Types.Pipe
             connection.Dispose();
             Thread.Sleep(500);
             connection = null;
+        }
+
+        public bool HasConnection()
+        {
+            if(connection.IsConnected) 
+            {
+                return true; 
+            }
+
+            Close();
+            return false;
         }
 
         public void Read(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)

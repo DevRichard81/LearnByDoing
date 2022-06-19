@@ -14,9 +14,10 @@ namespace Project_Gutenberg.Types
     {
         public ErrorObject? ErrorObject { get; set; }
 
-        public void Init(IConfiguration newConfiguration);
+        public void Init(IConfiguration newConfiguration, IGutenberg gutenberg);
         public void Start();
         public void Close();
+        public bool HasConnection();
 
         public void ReadWrite(
             ref StatisticOfFunction statisticOfFunctionSend,

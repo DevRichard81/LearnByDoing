@@ -2,10 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 using Project_Gutenberg.Error;
 using Project_Gutenberg.Statistic;
+using Project_Gutenberg.Statistics;
 
 namespace Project_Gutenberg.GutenbergShared
 {
@@ -43,7 +46,7 @@ namespace Project_Gutenberg.GutenbergShared
 
         ~GutenbergThreads()
         {
-            cancellationTokenSource.Cancel();
+            cancellationTokenSource?.Cancel();
             while(CountRunningThreads != 0)
                 Thread.Sleep(100);
             threads.Clear();
@@ -61,7 +64,118 @@ namespace Project_Gutenberg.GutenbergShared
             }
         }
 
-        public void Addthread(ThreadStart newThread)
+        public void AddThread(delegateVoidWithStatistic threadFunction, StatisticInterface statistic, ErrorObject? errorObject, IGutenbergBuffers gutenbergBuffers)
+        {
+            if (errorObject == null)
+            {
+                return;
+            }
+            if (threadFunction == null)
+            {
+                errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "threadFunction can not be null", "AddThread");
+                return;
+            }
+            if (statistic == null)
+            {
+                errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "statistics can not be null", "AddThread");
+                return;
+            }
+            if (cancellationTokenSource == null)
+            {
+                errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads.cancellationTokenSource can not be null", "AddThread");
+                return;
+            }
+
+            AddThread(new ThreadStart(
+                () =>
+                {
+                    StatisticOfFunction statisticOfFunction = new();
+
+                    while (!cancellationTokenSource.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            threadFunction(ref statisticOfFunction, gutenbergBuffers);
+                            statistic.IncomingMessage = statisticOfFunction.handelMessage;
+                            statistic.readData = statisticOfFunction.handelDataLength;
+                            statisticOfFunction.Reset();
+                            Thread.Sleep(100);
+                        }
+                        catch (SocketException ex)
+                        {
+                            errorObject.Set(ErrorObject.ErrorType.Error, 0, "SocketException [" + ex.Message + "]", "ThreadInside");
+                        }
+                        catch (Exception ex)
+                        {
+                            errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "Unknow Exception [" + ex.Message + "]", "ThreadInside");
+                        }
+                    }
+                    Interlocked.Decrement(ref statistic.runningThreads);
+                })
+            );
+            Interlocked.Increment(ref statistic.runningThreads);
+        }
+        public void AddThread(delegateVoidWithStatisticSendRead threadFunction, StatisticInterface statistic, ErrorObject? errorObject, IGutenbergBuffers gutenbergBuffers)
+        {
+            if (errorObject == null)
+            {
+                return;
+            }
+            if (threadFunction == null)
+            {
+                errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "threadFunction can not be null", "AddThread");
+                return;
+            }
+            if (statistic == null)
+            {
+                errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "statistics can not be null", "AddThread");
+                return;
+            }
+            if (cancellationTokenSource == null)
+            {
+                errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads.cancellationTokenSource can not be null", "AddThread");
+                return;
+            }
+
+            AddThread(new ThreadStart(
+                () =>
+                {
+                    StatisticOfFunction statisticOfFunctionSend = new();
+                    StatisticOfFunction statisticOfFunctionRead = new();
+
+                    while (!cancellationTokenSource.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            threadFunction(
+                                ref statisticOfFunctionSend,
+                                ref statisticOfFunctionRead,
+                                gutenbergBuffers.BufferSend,
+                                gutenbergBuffers.BufferReceive);
+
+                            statistic.IncomingMessage = statisticOfFunctionRead.handelMessage;
+                            statistic.readData = statisticOfFunctionRead.handelDataLength;
+                            statistic.OutcomingMessage = statisticOfFunctionSend.handelMessage;
+                            statistic.writeData = statisticOfFunctionSend.handelDataLength;
+                            statisticOfFunctionSend.Reset();
+                            statisticOfFunctionRead.Reset();
+                            Thread.Sleep(100);
+                        }
+                        catch (SocketException ex)
+                        {
+                            errorObject.Set(ErrorObject.ErrorType.Error, 0, "SocketException [" + ex.Message + "]", "ThreadInside");
+                        }
+                        catch (Exception ex)
+                        {
+                            errorObject.Set(ErrorObject.ErrorType.Fatal, 0, "Unknow Exception [" + ex.Message + "]", "ThreadInside");
+                        }
+                    }
+                    Interlocked.Decrement(ref statistic.runningThreads);
+                })
+            );
+            Interlocked.Increment(ref statistic.runningThreads);
+        }
+        private void AddThread(ThreadStart newThread)
         {            
             threads.Add(new Thread(newThread));
             Console.WriteLine($"AddThread [{threads.Count}]");

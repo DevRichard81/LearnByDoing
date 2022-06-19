@@ -1,24 +1,31 @@
 ﻿using System.Collections.Concurrent;
+using System.Reflection.Metadata.Ecma335;
+using Microsoft.VisualBasic;
 using Project_Gutenberg.Configuration;
 using Project_Gutenberg.Error;
 using Project_Gutenberg.GutenbergShared;
 using Project_Gutenberg.Statistic;
+using Project_Gutenberg.Statistics;
+using static Project_Gutenberg.GutenbergShared.GutenbergThreads;
 
 namespace Project_Gutenberg.Types.File
 {
     public class FileConnection : IConnectionType
     {
         private ConfigurationFile? Configuration { get; set; }
-        private string PickFiles;
-        private string SendFiles;
-        private string MoveReadedFiles;
+        private string PickFiles = String.Empty;
+        private string SendFiles = String.Empty;
+        private string MoveReadedFiles = String.Empty;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
-        public void Init(IConfiguration newConfiguration)
+        public void Init(IConfiguration newConfiguration, IGutenberg gutenberg)
         {
             Configuration = newConfiguration as ConfigurationFile;
             CheckDirectorys(Configuration);
+            gutenberg.gutenbergThreads.AddThread(Read, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
+            gutenberg.gutenbergThreads.AddThread(Write, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
+            gutenberg.isServer = true;
         }
 
         /// <summary>
@@ -29,6 +36,7 @@ namespace Project_Gutenberg.Types.File
         /// Not used for FileConnction
         /// </summary>
         public void Start() { }
+        public bool HasConnection() => false;
 
         private void CheckDirectorys(ConfigurationFile configurationFile)
         {

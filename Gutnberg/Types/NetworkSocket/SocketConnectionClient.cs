@@ -14,19 +14,36 @@ namespace Project_Gutenberg.Types.NetworkSocket
         private byte[] receiveBuffer;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
+        public CancellationTokenSource? tks;
 
-        public void Init(IConfiguration newConfiguration)
+        public void Init(IConfiguration newConfiguration, IGutenberg gutenberg)
         {
+            Console.WriteLine("SocketConnectionClient:Init");
             Configuration = newConfiguration as ConfigurationSocket;            
             SocketConnectionShare.CreateSocket(Configuration);
             SocketConnectionShare.Connect(Configuration);
             //
             receiveBuffer = new byte[Configuration.reciveBufferSize];
+            tks = gutenberg.gutenbergThreads.cancellationTokenSource;
+            gutenberg.gutenbergThreads.AddThread(Read, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
+            gutenberg.gutenbergThreads.AddThread(Write, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
         } 
 
         public void Close()
         {
+            Console.WriteLine("SocketConnectionClient:Close");
             SocketConnectionShare.Disconnect(Configuration);
+            tks?.Cancel();
+        }
+
+        public bool HasConnection()
+        {
+            if(Configuration.socket != null && Configuration.socket.Connected)
+                    return true;
+
+            Close();
+            Configuration.socket = null;
+            return false;
         }
 
         /// <summary>
@@ -47,7 +64,7 @@ namespace Project_Gutenberg.Types.NetworkSocket
 
         public void Write(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
-            if (Configuration.socket.Connected)
+            if (HasConnection())
             {
                 byte[]? sendBuffer;
                 if (buffer.BufferSend.TryDequeue(out sendBuffer))

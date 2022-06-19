@@ -10,34 +10,68 @@ namespace Project_Gutenberg.Types.NetworkSocket
     public class SocketConnectionServer : IConnectionType
     {
         private ConfigurationSocket? Configuration { get; set; }
-        private Thread listener;
         private List<Socket> connected;
         private ErrorObject? _errorObject;
         public ErrorObject? ErrorObject { get { return _errorObject; } set { _errorObject = value; } }
 
-        public void Init(IConfiguration newConfiguration)
+        public void Init(IConfiguration newConfiguration, IGutenberg gutenberg)
         {
             Configuration = newConfiguration as ConfigurationSocket;
             connected = new List<Socket>();
             SocketConnectionShare.CreateSocket(Configuration);
-            SocketConnectionShare.Listenner(Configuration);            
+            SocketConnectionShare.Listenner(Configuration);
+            gutenberg.gutenbergThreads.AddThread(Listener, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
+            gutenberg.gutenbergThreads.AddThread(Read, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
+            gutenberg.gutenbergThreads.AddThread(Write, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
+            gutenberg.isServer = true;
         }
 
-        public void Start()
-        {
-            listener = new Thread(() =>
-            {
-                Socket clientSocket = Configuration.socket.Accept();
-                connected.Add(clientSocket);
-            });
-            listener.Start();
-        }
+        public void Start() { }
 
         public void Close()
         {
             SocketConnectionShare.Disconnect(Configuration);
         }
+        public bool HasConnection()
+        {
+            bool hasActiveConnection = false;
+            
+            for(int i = 0; i < connected.Count; i++)
+            {
+                if(connected[i].Connected)
+                    hasActiveConnection = true;
+            }
+                        
+            return hasActiveConnection;
+        }
 
+        public void Listener(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
+        {
+            if (connected.Count == 0)
+            {
+                Socket clientSocket = Configuration.socket.Accept();
+                connected.Add(clientSocket);
+                Console.WriteLine("Connecting with " + clientSocket?.RemoteEndPoint?.ToString());
+            }
+            else
+            {
+                bool isRemoved = false;
+                for(int i = 0; i < connected.Count; i++)
+                {
+                    if (!connected[i].Connected)
+                    {
+                        Console.WriteLine("Client Disconnected removing the connection " + connected[i].RemoteEndPoint.ToString());
+                        connected[i].Shutdown(SocketShutdown.Both);
+                        connected[i].Disconnect(true);
+                        connected[i].Close();
+                        connected.RemoveAt(i);
+                        isRemoved = true;
+                    }
+                }    
+                if(isRemoved)
+                    Configuration.socket.Listen(Configuration.backlog);
+            }
+        }
         public void Read(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             int byteRec = SocketConnectionShare.Read(
@@ -53,7 +87,6 @@ namespace Project_Gutenberg.Types.NetworkSocket
             }
             Thread.Sleep(1);
         }
-
         public void Write(ref StatisticOfFunction statisticOfFunction, IGutenbergBuffers buffer)
         {
             byte[]? sendBuffer;

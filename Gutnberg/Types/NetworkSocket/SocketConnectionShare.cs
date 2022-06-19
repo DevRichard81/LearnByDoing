@@ -9,8 +9,13 @@ namespace Project_Gutenberg.Types.NetworkSocket
         public static void CreateSocket(ConfigurationSocket configuration)
         {
             Console.WriteLine("CreateSocket");
-            if(configuration.ipEndPoint!= null)
+            if (configuration.ipEndPoint != null)
+            {
                 configuration.socket = new Socket(configuration.ipEndPoint.AddressFamily, SocketType.Stream, configuration.protocolType);
+                configuration.socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontLinger, true);
+                configuration.socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                configuration.socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
+            }
         }
 
         public static void Connect(ConfigurationSocket configuration)
@@ -49,15 +54,28 @@ namespace Project_Gutenberg.Types.NetworkSocket
         }
 
         public static void Disconnect(ConfigurationSocket configuration)
-        {
-            Console.WriteLine("Disconnect");
-            try
+        {            
+            if (configuration.socket != null)
             {
-                configuration.socket.Shutdown(SocketShutdown.Both);
+                Console.WriteLine("Disconnect");
+                try
+                {
+                    configuration.socket?.Shutdown(SocketShutdown.Both);
+                    configuration.socket?.Disconnect(true);
+                }
+                catch (ObjectDisposedException ex) 
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+                catch (SocketException ex) 
+                {
+                    Console.WriteLine("SocketExcpetion.ErrorCode[" + ex.ErrorCode + "] " + ex.ToString());
+                }
+                finally
+                {
+                    configuration.socket?.Close();
+                }                
             }
-            catch(ObjectDisposedException ex) {  }
-
-            configuration.socket.Close();
         }
 
         public static int Read(ConfigurationSocket configuration, ref StatisticOfFunction statisticOfFunction, Socket [] readFromSockets, out List<byte[]> bufferList)
@@ -87,8 +105,11 @@ namespace Project_Gutenberg.Types.NetworkSocket
         }
         public static int Read(ref StatisticOfFunction statisticOfFunction, Socket readFromSocket, ref byte[] buffer)
         {
+            if (readFromSocket == null || !readFromSocket.Connected)
+                return 0;
+
             Array.Clear(buffer);
-            int countBytes = readFromSocket.Receive(buffer);
+            var countBytes = readFromSocket.Receive(buffer);
             if (statisticOfFunction != null)
             {
                 statisticOfFunction.handelDataLength += (uint)countBytes;

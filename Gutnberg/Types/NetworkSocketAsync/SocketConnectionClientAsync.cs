@@ -26,11 +26,12 @@ namespace Project_Gutenberg.Types.NetworkSocketAsync
             AsyncObject.Configuration?.socket?.Close();
             AsyncObject.connectDone.Reset();
         }
-        public void Init(IConfiguration newConfiguration)
+        public void Init(IConfiguration newConfiguration, IGutenberg gutenberg)
         {
             AsyncObject = new SocketConnectionAsyncObject();
             AsyncObject.Configuration = newConfiguration as ConfigurationSocket;
-            SocketConnectionShareAsync.CreateSocket(ref AsyncObject);      
+            SocketConnectionShareAsync.CreateSocket(ref AsyncObject);
+            gutenberg.gutenbergThreads.AddThread(ReadWrite, gutenberg.statistic, gutenberg.errorObject, gutenberg.gutenbergBuffers);
         }
         public void Start()
         {
@@ -39,7 +40,15 @@ namespace Project_Gutenberg.Types.NetworkSocketAsync
                 new AsyncCallback(SocketConnectionShareAsync.ConnectCallback),
                 AsyncObject);
         }
+        public bool HasConnection()
+        {
+            if(AsyncObject.Configuration.socket.Connected)
+                return true;
 
+            Close();
+            AsyncObject.Configuration.socket = null;
+            return false;
+        }
         public void ReadWrite(
             ref StatisticOfFunction statisticOfFunctionSend,
             ref StatisticOfFunction statisticOfFunctionReceive,

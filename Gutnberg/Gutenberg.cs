@@ -11,19 +11,21 @@ using Project_Gutenberg.GutenbergShared;
 namespace Project_Gutenberg
 {
     public class Gutenberg : IGutenberg
-    {
-        protected IGutenbergBuffers GutenbergBuffers { get; set; }
-        protected GutenbergThreads GutenbergThreads;
+    {                
         protected IConfiguration? configuration;
         private IConnectionType? type;
         public StatisticInterface? statistic { get; set; }
         public ErrorObject? errorObject { get; set; }
+        public IGutenbergBuffers gutenbergBuffers { get; set; }
+        public GutenbergThreads gutenbergThreads { get; set; }
+        public bool isServer { get; set; }
 
         public Gutenberg()
         {
             statistic = new StatisticInterface();
-            GutenbergBuffers = new GutenbergBuffers();
-            GutenbergThreads = new GutenbergThreads();
+            errorObject = new ErrorObject();
+            gutenbergBuffers = new GutenbergBuffers();
+            gutenbergThreads = new GutenbergThreads();
         }
 
         ~Gutenberg() {
@@ -54,27 +56,24 @@ namespace Project_Gutenberg
                 errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, nameof(type) + " can not be null", "Init");
                 return;
             }
-            type.Init(configuration as IConfiguration);
-            AddThread(type.Read);
-            AddThread(type.Write);
+            type.Init(configuration as IConfiguration, this);
         }
         public virtual void Start()
-        { 
-            type.Start();
-            GutenbergThreads.Start();
+        {
+            gutenbergThreads.Start();
         }
         public virtual void Terminated() => type?.Close();
-        public bool HasMessage() => GutenbergBuffers.HasMessage();
-
+        public bool HasMessage() => gutenbergBuffers.HasMessage();
+        public bool HasConnection() => type.HasConnection();      
         public virtual void HasError()
         {
-            if (errorObject != null)
+            if (errorObject != null && errorObject.errorNumber != 0)
             {
                 Console.WriteLine("Error in " + nameof(Gutenberg));
                 Console.WriteLine(errorObject.ToString());
             }
 
-            if (type.ErrorObject != null)
+            if (type?.ErrorObject != null)
             {
                 Console.WriteLine("Error in ConnectionType" + type.GetType().Name);
                 Console.WriteLine(type.ErrorObject.ToString());
@@ -83,72 +82,19 @@ namespace Project_Gutenberg
         public void Status()
         {
             Console.WriteLine("Threads:");
-            Console.WriteLine(GutenbergThreads.ToString());
+            Console.WriteLine(gutenbergThreads.ToString());
             Console.WriteLine("Buffers:");
-            Console.WriteLine(GutenbergBuffers.ToString());
-        }
-
-        internal void AddThread(GutenbergThreads.delegateVoidWithStatistic threadFunction)
-        {
-            if (threadFunction == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "threadFunction can not be null", "AddThread");
-                return;
-            }
-            if (GutenbergThreads == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads can not be null", "AddThread");
-                return;
-            }
-            if (statistic == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "statistics can not be null", "AddThread");
-                return;
-            }
-            if (GutenbergThreads.cancellationTokenSource == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads.cancellationTokenSource can not be null", "AddThread");
-                return;
-            }
-
-            GutenbergThreads.Addthread(new ThreadStart(
-                () =>
-                {
-                    StatisticOfFunction statisticOfFunction = new();
-
-                    while (!GutenbergThreads.cancellationTokenSource.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            threadFunction(ref statisticOfFunction, GutenbergBuffers);
-                            statistic.IncomingMessage = statisticOfFunction.handelMessage;
-                            statistic.readData = statisticOfFunction.handelDataLength;
-                            statisticOfFunction.Reset();
-                            Thread.Sleep(100);
-                        }
-                        catch (SocketException ex)
-                        {
-                            errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Error, 0, "SocketException [" + ex.Message + "]", "ThreadInside");
-                        }
-                        catch (Exception ex)
-                        {
-                            errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "Unknow Exception [" + ex.Message + "]", "ThreadInside");
-                        }
-                    }
-                    Interlocked.Decrement(ref statistic.runningThreads);
-                })
-            );
-            Interlocked.Increment(ref statistic.runningThreads);
-        }    
+            Console.WriteLine(gutenbergBuffers.ToString());
+        }        
 
         public virtual void Put(byte[] setMessage)
         {
-            GutenbergBuffers.AddSendMessage(setMessage);
+            gutenbergBuffers.AddSendMessage(setMessage);
         }
 
         public virtual byte[] Get()
         {
-            return GutenbergBuffers.GetReceivedMessage();
+            return gutenbergBuffers.GetReceivedMessage();
         }
     }
 }

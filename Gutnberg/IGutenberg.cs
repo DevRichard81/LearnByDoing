@@ -9,16 +9,15 @@ using Project_Gutenberg.Statistics;
 
 namespace Project_Gutenberg
 {
-    public enum BufferIndex
-    {
-        Send = 0,
-        Receive = 1
-    }
+
 
     public interface IGutenberg
     {
         public ErrorObject? errorObject { get; set; }
         public StatisticInterface? statistic { get; set; }
+        public IGutenbergBuffers gutenbergBuffers { get; set; }
+        public GutenbergThreads gutenbergThreads { get; set; }
+        public bool isServer { get; set; }
 
         public void Init();
         public void Start();
@@ -26,6 +25,7 @@ namespace Project_Gutenberg
         public void Status();
         public void HasError();
         public bool HasMessage();
+        public bool HasConnection();
         public void Put(byte[] setMessage);
         public byte [] Get();
     }

@@ -35,76 +35,14 @@ namespace Project_Gutenberg
                 errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, nameof(typeAsync) + " can not be null", "Init");
                 return;
             }
-            typeAsync.Init(configuration as IConfiguration);
-
-            AddThread(typeAsync.ReadWrite);
+            typeAsync.Init(configuration as IConfiguration, this);            
         }
         public override void Start()
         {
             typeAsync.Start();
-            GutenbergThreads.Start();
+            gutenbergThreads.Start();
         }
-        internal void AddThread(GutenbergThreads.delegateVoidWithStatisticSendRead threadFunction)
-        {
-            if (threadFunction == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "threadFunction can not be null", "AddThread");
-                return;
-            }
-            if (GutenbergThreads == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads can not be null", "AddThread");
-                return;
-            }
-            if (statistic == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "statistics can not be null", "AddThread");
-                return;
-            }
-            if (GutenbergThreads.cancellationTokenSource == null)
-            {
-                errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "GutenbergThreads.cancellationTokenSource can not be null", "AddThread");
-                return;
-            }
-
-            GutenbergThreads.Addthread(new ThreadStart(
-                () =>
-                {
-                    StatisticOfFunction statisticOfFunctionSend = new();
-                    StatisticOfFunction statisticOfFunctionRead = new();
-
-                    while (!GutenbergThreads.cancellationTokenSource.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            threadFunction(
-                                ref statisticOfFunctionSend,
-                                ref statisticOfFunctionRead,
-                                GutenbergBuffers.BufferSend,
-                                GutenbergBuffers.BufferReceive);
-
-                            statistic.IncomingMessage = statisticOfFunctionRead.handelMessage;
-                            statistic.readData = statisticOfFunctionRead.handelDataLength;
-                            statistic.OutcomingMessage = statisticOfFunctionSend.handelMessage;
-                            statistic.writeData = statisticOfFunctionSend.handelDataLength;
-                            statisticOfFunctionSend.Reset();
-                            statisticOfFunctionRead.Reset();
-                            Thread.Sleep(100);
-                        }
-                        catch (SocketException ex)
-                        {
-                            errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Error, 0, "SocketException [" + ex.Message + "]", "ThreadInside");
-                        }
-                        catch (Exception ex)
-                        {
-                            errorObject = new ErrorObject().Set(ErrorObject.ErrorType.Fatal, 0, "Unknow Exception [" + ex.Message + "]", "ThreadInside");
-                        }
-                    }
-                    Interlocked.Decrement(ref statistic.runningThreads);
-                })
-            );
-            Interlocked.Increment(ref statistic.runningThreads);
-        }
+        
         public override void Terminated()
         {
             base.Terminated();

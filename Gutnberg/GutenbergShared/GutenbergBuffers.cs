@@ -9,7 +9,7 @@ using Project_Gutenberg;
 
 namespace Project_Gutenberg.GutenbergShared
 {
-    internal class GutenbergBuffers : IGutenbergBuffers
+    public class GutenbergBuffers : IGutenbergBuffers
     {
         private ConcurrentQueue<byte[]> buffersReceive;
         public ConcurrentQueue<byte[]> BufferReceive { get { return buffersReceive; } }
