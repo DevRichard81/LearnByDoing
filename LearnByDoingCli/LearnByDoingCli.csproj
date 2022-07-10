@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Alexander\Alexander.csproj" />
+    <ProjectReference Include="..\CSharpMagic\CSharpMagic.csproj" />
     <ProjectReference Include="..\Gutnberg\Gutenberg.csproj" />
     <ProjectReference Include="..\Mendel\Mendel.csproj" />
   </ItemGroup>

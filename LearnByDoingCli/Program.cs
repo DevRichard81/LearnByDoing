@@ -11,7 +11,10 @@ Console.WriteLine("----------------------------");
 // Gutenberg
 //ISamples mySample = mySampleFile;
 //ISamples mySample = new SamplePipe();
-ISamples mySample = new SampleSocket();
+//ISamples mySample = new SampleSocket();
 //ISamples mySample = new SampleSocketAsync();
+//
+// CSharpMagic
+ISamples mySample = new SampleCSharpMagic();
 //
 mySample.Run();
